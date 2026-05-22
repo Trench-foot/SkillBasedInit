@@ -53,53 +53,44 @@
       <PrivateAssets>all</PrivateAssets>
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
-
     <Reference Include="Assembly-CSharp">
-      <Private>False</Private>
+      <HintPath>bin\Debug\net472\Assembly-CSharp.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp-firstpass">
-      <Private>False</Private>
+      <HintPath>..\..\..\..\BATTLETECH\BattleTech_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
     </Reference>
     <Reference Include="CustomAmmoCategories">
-      <HintPath>$(DeployedModPath)\..\CustomAmmoCategories\CustomAmmoCategories.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\..\..\..\BATTLETECH\Mods\CustomAmmoCategories\CustomAmmoCategories.dll</HintPath>
     </Reference>
     <Reference Include="CustomComponents">
-      <HintPath>$(DeployedModPath)\..\CustomComponents\CustomComponents.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\..\..\..\BATTLETECH\Mods\CustomComponents\CustomComponents.dll</HintPath>
     </Reference>
     <Reference Include="CustomUnits">
-      <HintPath>$(DeployedModPath)\..\CustomUnits\CustomUnits.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\..\..\..\BATTLETECH\Mods\CustomUnits\CustomUnits.dll</HintPath>
     </Reference>
     <Reference Include="IRBTModUtils">
-      <HintPath>$(DeployedModPath)\..\IRBTModUtils\IRBTModUtils.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="MechEngineer">
-      <HintPath>$(DeployedModPath)\..\MechEngineer\MechEngineer.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\..\..\..\BATTLETECH\Mods\IRBTModUtils\IRBTModUtils.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json">
-      <Private>False</Private>
+      <HintPath>..\..\..\..\BATTLETECH\BattleTech_Data\Managed\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System">
-      <Private>False</Private>
+      <HintPath>..\..\..\..\BATTLETECH\BattleTech_Data\Managed\System.dll</HintPath>
     </Reference>
     <Reference Include="System.Core">
-      <Private>False</Private>
+      <HintPath>..\..\..\..\BATTLETECH\BattleTech_Data\Managed\System.Core.dll</HintPath>
     </Reference>
     <Reference Include="Unity.TextMeshPro">
-      <Private>False</Private>
+      <HintPath>..\..\..\..\BATTLETECH\BattleTech_Data\Managed\Unity.TextMeshPro.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine">
-      <Private>False</Private>
+      <HintPath>..\..\..\..\BATTLETECH\BattleTech_Data\Managed\UnityEngine.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <Private>False</Private>
+      <HintPath>..\..\..\..\BATTLETECH\BattleTech_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UI">
-      <Private>False</Private>
+      <HintPath>..\..\..\..\BATTLETECH\BattleTech_Data\Managed\UnityEngine.UI.dll</HintPath>
     </Reference>
   </ItemGroup>
 
