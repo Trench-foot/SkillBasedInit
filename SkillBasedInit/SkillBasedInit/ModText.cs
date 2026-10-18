@@ -13,6 +13,8 @@ namespace SkillBasedInit
         public const string LT_FT_VIGILANCE = "FLOATIE_VIGILANCE";
         public const string LT_FT_PUSHBACK_NOW = "FLOATIE_PUSHBACK_NOW";
         public const string LT_FT_PUSHBACK_LATER = "FLOATIE_PUSHBACK_LATER";
+        public const string LT_FT_MELEE_NOW = "FLOATIE_MELEE_NOW";
+        public const string LT_FT_MELEE_LATER = "FLOATIE_MELEE_LATER";
         public const string LT_FT_ARRIVAL = "FLOATIE_ARRIVAL";
 
         // Mech Bay
@@ -57,6 +59,8 @@ namespace SkillBasedInit
             { LT_FT_VIGILANCE, "VIGILANCE! +{0} INIT NEXT ROUND!" },
             { LT_FT_PUSHBACK_NOW, "PUSHED BACK! -{0} INIT" },
             { LT_FT_PUSHBACK_LATER, "PUSHED BACK! -{0} INIT NEXT ROUND" },
+            { LT_FT_MELEE_NOW, "STAGGERED! -{0} INIT" },
+            { LT_FT_MELEE_LATER, "STAGGERED! -{0} INIT NEXT ROUND" },
             { LT_FT_ARRIVAL, "ARRIVING! -{0} INIT" },
         };
 

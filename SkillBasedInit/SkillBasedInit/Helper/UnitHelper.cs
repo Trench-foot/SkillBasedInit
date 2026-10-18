@@ -544,6 +544,25 @@ namespace SkillBasedInit.Helper
             return finalMod;
         }
 
+        // Melee hit delay on the target: a flat base plus how much better the attacker brawls than the target braces
+        public static int MeleeHitInitMod(this AbstractActor target, AbstractActor attacker)
+        {
+            if (target == null || attacker == null) return 0;
+            if (Mod.Config.MeleeHit.BasePhases <= 0) return 0; // disabled
+
+            Pilot attackerPilot = attacker.GetPilot();
+            Pilot targetPilot = target.GetPilot();
+            int attackerMod = attackerPilot != null ? attackerPilot.AveragePilotingAndTacticsMod() : 0;
+            int targetMod = targetPilot != null ? targetPilot.AverageGutsAndPilotingMod() : 0;
+
+            int actorDelta = Math.Max(0, attackerMod - targetMod);
+            int finalMod = Mod.Config.MeleeHit.BasePhases + actorDelta;
+            Mod.Log.Debug?.Write($"Melee hit penalty: {finalMod} = base: {Mod.Config.MeleeHit.BasePhases} + " +
+                $"max(0, attackerMod: {attackerMod} - targetMod: {targetMod})");
+
+            return finalMod;
+        }
+
 
         public static int VigilanceInitMod(this AbstractActor actor)
         {

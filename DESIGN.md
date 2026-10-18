@@ -51,8 +51,9 @@ Vanilla works on 5 phases; upstream SBI and the fork work on 30. "Upstream SBI" 
 | **Gear / ability / injury modifiers** (`BaseInitiative` stat) | Each point = 1 phase, permanent while the source is active | **Ignored in combat.** The vanilla stat isn't read. Only SBI's own `SBI_MOD_MISC` / `SBI_MOD_INJURY` count, and no BEX content sets those. | Each point = `VanillaModifiers.PhasesPerPoint (3)` phases, applied every round. |
 | **Called shot** (morale attack) | Target +1 phase now (unless already in the last phase), plus a 1-round `AbilityDefInitiativeDelay` effect (`BaseInitiative +1`) | Penalty = random 2..6 + max(0, attacker avg(Gunnery,Tactics) − target avg(Guts,Tactics)) + `SBI_MOD_CALLED_SHOT_*` stats. Applied now if the target hasn't acted, otherwise stored for next round. The vanilla effect is still created but has no effect, since SBI ignores the stat. | Replaces the original. Penalty = `CalledShot.BasePhases (3)` + max(0, attacker avg(Gunnery,Tactics) − target avg(Guts,Tactics)) + `SBI_MOD_CALLED_SHOT_*` stats. **No randomness.** Applied now if the target hasn't acted, otherwise next round. The vanilla effect isn't created, so nothing is double counted. |
 | **Vigilance** (morale defend) | `PhaseModifierSelf −1`, so next round is 1 phase earlier. Can't be used again while pending. Also applies Braced + stability reset. | Bonus = random 2..6 + avg(Guts,Tactics) + `SBI_MOD_VIGILANCE`, stored for next round. SBI's prefix sets the unit to `PhaseSpecial` so vanilla returns early, which means `PhaseModifierSelf` is never set. As a side effect, the vanilla "can't re-use while pending" gate never engages. | Replaces the phase part. Bonus = `Vigilance.BasePhases (3)` + avg(Guts,Tactics) + `SBI_MOD_VIGILANCE`, stored for next round. **No randomness.** Braced and stability are untouched. The vanilla re-use gate is left alone (see note below). |
-| **Knockdown** | `ForceUnitOnePhaseDown`: +1 phase now plus the delay effect. While prone at the end of its activation, +1 phase next round (`PhaseModifier`). | Prone penalty (random 2..9, reduced by Piloting) applied now if the unit hasn't acted, and re-rolled each round while prone. Vanilla's `ForceUnitOnePhaseDown` **also** runs: +1 phase, or nothing if the unit sits at phase 5 (bug). | **SBI prone penalty only.** Vanilla's knockdown delay and prone carry-over are suppressed. |
-| **Melee push-back** (`MeleeHitPushBackPhases`, vanilla or CBTBE) | +1 phase per point now, plus the delay effect each time | Falls through to vanilla: +1 phase per point, except a unit sitting at phase 5 isn't moved (bug). The delay effect is ignored. | `MeleePushBack.PhasesPerPoint (3)` per point. Applied now if the target hasn't acted, otherwise next round. |
+| **Knockdown** | `ForceUnitOnePhaseDown`: +1 phase now plus the delay effect. While prone at the end of its activation, +1 phase next round (`PhaseModifier`). | Prone penalty (random 2..9, reduced by Piloting) applied now if the unit hasn't acted, and re-rolled each round while prone. Vanilla's `ForceUnitOnePhaseDown` **also** runs: +1 phase, or nothing if the unit sits at phase 5 (bug). | **SBI prone penalty only.** Vanilla's knockdown delay and prone carry-over are suppressed. Applied now only if the unit hasn't **begun** activating; a unit knocked down during its own activation (e.g. a failed DFA) gets it next round instead. |
+| **Melee hit** (any melee that does damage) | Nothing. Base melee never moves the target. | Nothing (falls through to vanilla) | **New.** Penalty = `MeleeHit.BasePhases (3)` + max(0, attacker avg(Piloting,Tactics) − target avg(Guts,Piloting)). **No randomness.** Applied now if the target hasn't acted, otherwise next round. `BasePhases: 0` turns it off. Push-back gear stacks on top. |
+| **Melee push-back** (`MeleeHitPushBackPhases`, vanilla or CBTBE) | +1 phase per point now, plus the delay effect each time. Only gear sets the stat (in BEX: Komiyaba Grapple Frame, Excavator Claw). | Falls through to vanilla: +1 phase per point, except a unit sitting at phase 5 isn't moved (bug). The delay effect is ignored. | `MeleePushBack.PhasesPerPoint (3)` per point. Applied now if the target hasn't acted, otherwise next round. |
 | **Reserve** | +1 phase. No lingering cost. | +1 phase + hesitation roll (2..6 in the repo's `mod.json`; the 2.0.0 install used 4..12) added now. Stored, then reduced by Tactics+1 at the start of every round, including after consecutive reserves. | +1 phase + hesitation roll (2..6) added now. **Stacks on consecutive reserves** (see below). |
 | **Spawn after round 1** | Placed in the last phase (`ForceUnitToLastPhase`) | Not handled. The unit keeps the vanilla `InitStats` phase (2..5 of 30), so reinforcements act almost first. | Full SBI roll + `Arrival.DelayPhases (5)` for the arrival round, never earlier than the phase in progress (so it still acts that round). Units joining in round 1 get the roll with no delay, which avoids penalising the initial deployment (e.g. CustomDeploy). Normal rolls from the next round. |
 | **Load mid-round** | Valid phases 1..5 kept | Any unit in phase 6..30 is flagged invalid and reset to vanilla `BaseInitiative` (phase 2..5). Most units jump to the front for that round. | Phases 1..30 stay valid (fixed `HasValidInitiative`). |
@@ -63,6 +64,8 @@ Vanilla works on 5 phases; upstream SBI and the fork work on 30. "Upstream SBI" 
   - `Mech.CompleteKnockdown` sets a flag, and that call does nothing.
   - Morale attacks get the called-shot penalty.
   - Everything else is treated as melee push-back. Today that is vanilla `MeleeHitPushBackPhases` and CBTBE's copy of it.
+- **Melee hit** is a postfix on `AbstractActor.ResolveAttackSequence`, which runs once per target at the end of an attack sequence (Mech/Vehicle/Turret overrides call base). It skips sequences where the target is the attacker (DFA self damage, CBTBE's self-knockdown sequences) and sequences that did no damage to the target. It is stored in the same `SBI_STATE_MELEE_PUSHBACK` stat when deferred.
+- **"Now or next round"** for every delay (called shot, knockdown, melee) uses `InitiativeHelper.DelayMustWaitForNextRound`: `HasActivatedThisRound || HasBegunActivation || Initiative >= MaxPhase`.
 - **Push-back carried to next round** uses a new stat, `SBI_STATE_MELEE_PUSHBACK`. It's consumed in `UpdateInitiative` like `SBI_STATE_CALLED_SHOT`. Actors from older saves get the stat on first use.
 - **Knockdown on a unit that's already prone or dead** no longer adds a second prone penalty. Upstream's postfix didn't check whether vanilla actually knocked the unit down.
 - **Vigilance replaces the vanilla call outright.** Upstream instead faked the unit's phase so vanilla returned early.
@@ -105,6 +108,7 @@ New top-level keys:
 "VanillaModifiers": { "PhasesPerPoint": 3 },
 "CalledShot":       { "BasePhases": 3 },
 "Vigilance":        { "BasePhases": 3 },
+"MeleeHit":         { "BasePhases": 3 },
 "MeleePushBack":    { "PhasesPerPoint": 3 },
 "Arrival":          { "DelayPhases": 5 }
 ```
@@ -165,7 +169,38 @@ Per-unit-class changes:
 - Dependencies: IRBTModUtils, CustomComponents. CustomUnits types are used at runtime.
 - To verify in-game: MissionControl, CustomDeploy and CustomUnits write `Initiative` directly (spawns and deploy). The arrival patch must not fight them.
 
+## Fix found in first in-game test (2026-10-17)
+
+- **Symptom:** the screen flashed and an error log filled the screen as soon as a mission loaded.
+- **Cause:**
+  - Bug fix 2 set `PhaseAssault` to 30. CustomUnits' `Mech.InitStats` sets a new mech's `Initiative` from the phase constants, so assault mechs spawned at phase 30.
+  - `CombatHUD.Init` builds the phase track before combat is interleaved. Upstream's `SetTrackerPhase` prefix returns early in that case and lets vanilla run, and vanilla does `PhaseIcons[phase - 1]` on a 5-slot list.
+  - `PhaseIcons[29]` threw `ArgumentOutOfRangeException`, which aborted `CombatHUD.Init`. `CombatHUDPhaseTrack.Update` then threw a `NullReferenceException` every frame (`HUD.TargetingComputerShowing`).
+- **Fix:**
+  - The `SetTrackerPhase` prefix never falls through to vanilla. `InitiativeHelper.PhaseTrackSlot` maps any phase onto a valid slot; before interleaving, every unit shares the last slot.
+  - `SetTrackerTurnEventPhase` had the same unchecked `turnEventIcons[phase - 1]` (upstream too, for any turn event after phase 5) and gets the same treatment.
+- `PhaseTrackTests` covers the crash case and checks that every phase/current-phase combination gives a valid slot.
+
+## Fixes found in second in-game test (2026-10-17)
+
+- **Phase track markers stuck after round 1.** The first fix also recorded `tracker.CurrentlyDisplayedPhase`. Vanilla's `RefreshAllIconTrackers` only re-places a tracker when that value differs from the unit's phase, but the 5 slots slide with the current phase. A unit whose phase didn't change was never moved, so it stopped lining up with the highlighted phase. The prefix now leaves the value at -1 so every tracker is re-placed on each refresh, as upstream did. Turn-event trackers still record it; they're placed once at the current phase.
+- **Melee didn't change initiative.** Working as vanilla and upstream: only `MeleeHitPushBackPhases` gear delays a melee target. Added the hybrid **melee hit** event (see Events).
+- **Knockdown during the unit's own activation was lost.** The "now" check only looked at `HasActivatedThisRound`, which is false until the activation ends, so the penalty was added to a unit already acting. Now `HasBegunActivation` also defers it to next round. In the test log all 5 knockdowns reached the patch; 3 applied immediately (2 of them partly clamped at phase 30) and 2 were deferred on units that died before the next round.
+
+## Packaging (step 5)
+
+- Assembly `BTX_SkillBasedInit` 4.0.0, mod `Version` 4.0.0.
+- `mod.json`:
+  - `DependsOn`: IRBTModUtils, CustomComponents, CustomUnits, Custom Ammo Categories. The last two are used at runtime but upstream didn't declare them.
+  - `ConflictsWith`: SkillBasedInit, ExpandedInitiative, Better Initiative, The Engine Initiative.
+- **Release builds assemble `dist\BTX_SkillBasedInit`** (DLL, `mod.json`, `mod_localized_text.json`, icons). `dist/` is gitignored.
+  - Upstream's post-build copy into RogueTech's `Core\SkillBasedInit` was removed. The build never writes into the game folder or another modpack.
+- `mod.json` still ships `Debug: true`, for the in-game test pass. Set it to `false` for release.
+
 ## Implementation order
+
+Steps 1–5 are done (see git history on branch `btx-skillbasedinit`). Step 6 is the in-game test.
+
 
 Each step builds, keeps tests green, and adds tests where logic changes.
 

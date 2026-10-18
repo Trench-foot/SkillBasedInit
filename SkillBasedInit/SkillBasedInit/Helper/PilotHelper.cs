@@ -112,6 +112,16 @@ namespace SkillBasedInit.Helper
             return (int)Math.Ceiling((pilot.SBIGutsMod() + pilot.SBITacticsMod()) / 2.0);
         }
 
+        public static int AveragePilotingAndTacticsMod(this Pilot pilot)
+        {
+            return (int)Math.Ceiling((pilot.SBIPilotingMod() + pilot.SBITacticsMod()) / 2.0);
+        }
+
+        public static int AverageGutsAndPilotingMod(this Pilot pilot)
+        {
+            return (int)Math.Ceiling((pilot.SBIGutsMod() + pilot.SBIPilotingMod()) / 2.0);
+        }
+
         public static void LogPilotStats(this Pilot pilot)
         {
             if (Mod.Config.Debug)

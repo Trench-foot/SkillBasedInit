@@ -4,17 +4,11 @@
     <Error Text="BattleTechGameDir variable not set properly" />
   </Target>
 
-  <PropertyGroup Condition="'$(DeployedModPath)' == '' And Exists('$(BattleTechGameDir)\Mods\Core\SkillBasedInit')">
-    <!-- Modpack -->
-    <DeployedModPath>$(BattleTechGameDir)\Mods\Core\SkillBasedInit</DeployedModPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(DeployedModPath)' == '' And Exists('$(BattleTechGameDir)\Mods\SkillBasedInit')">
-    <!-- flat dir -->
-    <DeployedModPath>$(BattleTechGameDir)\Mods\SkillBasedInit</DeployedModPath>
-  </PropertyGroup>
-
   <PropertyGroup>
     <OutputType>Library</OutputType>
+    <!-- BTX fork: renamed so it can't be mistaken for (or overwrite) the SkillBasedInit RogueTech ships -->
+    <AssemblyName>BTX_SkillBasedInit</AssemblyName>
+    <RootNamespace>SkillBasedInit</RootNamespace>
     <TargetFramework>net472</TargetFramework>
     <AssemblySearchPaths>
       $(ReferencePath);
@@ -25,18 +19,27 @@
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
 
-    <AssemblyTitle>SkillBasedInit</AssemblyTitle>
-    <Product>SkillBasedInit</Product>
-    <Copyright>Copyright © 2023</Copyright>
-    <AssemblyVersion>3.1.0</AssemblyVersion>
-    <FileVersion>3.1.0</FileVersion>
+    <AssemblyTitle>BTX_SkillBasedInit</AssemblyTitle>
+    <Product>BTX_SkillBasedInit</Product>
+    <Copyright>Copyright © 2023 IceRaptor, BTX fork 2026 Trench-foot</Copyright>
+    <Version>4.0.0</Version>
+    <AssemblyVersion>4.0.0</AssemblyVersion>
+    <FileVersion>4.0.0</FileVersion>
     <LangVersion>11</LangVersion>
   </PropertyGroup>
 
-  <Target Name="AfterBuildMigrated" AfterTargets="CopyFilesToOutputDirectory">
-    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(BattleTechGameDir)\Mods\Core\SkillBasedInit" Condition="'$(BattleTechGameDir)' != '' And Exists('$(BattleTechGameDir)\Mods\Core\SkillBasedInit')" />
-    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(BattleTechGameDir)\Mods_CBDE\Core\SkillBasedInit" Condition="'$(BattleTechGameDir)' != '' And Exists('$(BattleTechGameDir)\Mods_CBDE\Core\SkillBasedInit')" />
-    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(RogueTechRepo)\Core\SkillBasedInit" Condition="'$(RogueTechRepo)' != '' And Exists('$(RogueTechRepo)\Core\SkillBasedInit')" />
+  <!-- Assemble an installable mod folder in the repo (dist\BTX_SkillBasedInit). Upstream copied the DLL into
+       RogueTech's Core\SkillBasedInit; the fork never writes into the game or another modpack. -->
+  <PropertyGroup>
+    <DistModDir>$(MSBuildProjectDirectory)\..\..\dist\BTX_SkillBasedInit</DistModDir>
+  </PropertyGroup>
+  <Target Name="AssembleDist" AfterTargets="CopyFilesToOutputDirectory" Condition="'$(Configuration)' == 'Release'">
+    <ItemGroup>
+      <DistIcons Include="$(MSBuildProjectDirectory)\..\..\modAssets\icons\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(DistModDir)" />
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\..\..\modAssets\mod.json;$(MSBuildProjectDirectory)\..\..\modAssets\mod_localized_text.json" DestinationFolder="$(DistModDir)" />
+    <Copy SourceFiles="@(DistIcons)" DestinationFolder="$(DistModDir)\icons" />
   </Target>
 
   <PropertyGroup>

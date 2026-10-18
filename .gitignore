@@ -243,3 +243,5 @@ ModelManifest.xml
 
 # Ignore the VS Directory.build.props file
 Directory.Build.props 
+# BTX fork: packaged mod folder built by the Release configuration
+dist/

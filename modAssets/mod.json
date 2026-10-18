@@ -1,14 +1,15 @@
 {
-    "Name": "SkillBasedInit",
+    "Name": "BTX_SkillBasedInit",
     "Enabled": true,
 	"Hidden": true,
-    "Version": "3.0.0",
-    "Description": "Introduces 30 initiative phases with supporting modifiers",
-    "Author": "IceRaptor",
-    "Website": "https://github.com/BattletechModders/SkillBasedInit",
+    "Version": "4.0.0",
+    "Description": "BTX fork of SkillBasedInit: 30 initiative phases with skill, gear and state modifiers. Vanilla and modpack initiative bonuses apply.",
+    "Author": "IceRaptor, BTX fork by Trench-foot",
+    "Website": "https://github.com/Trench-foot/SkillBasedInit",
     "Contact": "",
-    "DLL": "SkillBasedInit.dll",
-    "DependsOn" : [ "IRBTModUtils", "CustomComponents" ],
+    "DLL": "BTX_SkillBasedInit.dll",
+    "DependsOn" : [ "IRBTModUtils", "CustomComponents", "CustomUnits", "Custom Ammo Categories" ],
+    "ConflictsWith" : [ "SkillBasedInit", "ExpandedInitiative", "Better Initiative", "The Engine Initiative" ],
     "Manifest": [ { "Type": "SVGAsset", "Path": "icons/"} ],
     "Settings": {
         "Debug" : true,
@@ -42,16 +43,36 @@
 			}
 		},
 		
+		"VanillaModifiers" : {
+			"PhasesPerPoint" : 3
+		},
+		
+		"CalledShot" : {
+			"BasePhases" : 3
+		},
+		
+		"Vigilance" : {
+			"BasePhases" : 3
+		},
+		
+		"MeleeHit" : {
+			"BasePhases" : 3
+		},
+
+		"MeleePushBack" : {
+			"PhasesPerPoint" : 3
+		},
+		
+		"Arrival" : {
+			"DelayPhases" : 5
+		},
+		
 		"Mech" : {
 			"TypeMod" : 0,
 			"RandomnessMax" : -9,
 			"RandomnessMin" : -3,
 			"HesitationMax" : -6,
 			"HesitationMin" : -2,
-			"CalledShotRandMax" : -6,
-			"CalledShotRandMin" : -2,
-			"VigilanceRandMax" : 6,
-			"VigilanceRandMin" : 2,
 			"InspiredMax" : 3,
 			"InspiredMin" : 1,
 			"DefaultTonnage" : 120.0,
@@ -82,10 +103,6 @@
 			"RandomnessMin" : -3,
 			"HesitationMax" : -6,
 			"HesitationMin" : -2,
-			"CalledShotRandMax" : -6,
-			"CalledShotRandMin" : -2,
-			"VigilanceRandMax" : 6,
-			"VigilanceRandMin" : 2,
 			"InspiredMax" : 3,
 			"InspiredMin" : 1,
 			"DefaultTonnage" : 120.0,
@@ -112,10 +129,6 @@
 			"RandomnessMin" : -3,
 			"HesitationMax" : -6,
 			"HesitationMin" : -2,
-			"CalledShotRandMax" : -6,
-			"CalledShotRandMin" : -2,
-			"VigilanceRandMax" : 6,
-			"VigilanceRandMin" : 2,
 			"InspiredMax" : 3,
 			"InspiredMin" : 1,
 			"DefaultTonnage" : 120.0,
@@ -142,10 +155,6 @@
 			"RandomnessMin" : -3,
 			"HesitationMax" : -6,
 			"HesitationMin" : -2,
-			"CalledShotRandMax" : -6,
-			"CalledShotRandMin" : -2,
-			"VigilanceRandMax" : 6,
-			"VigilanceRandMin" : 2,
 			"InspiredMax" : 3,
 			"InspiredMin" : 1,
 			"DefaultTonnage" : 120.0,
@@ -172,10 +181,6 @@
 			"RandomnessMin" : -3,
 			"HesitationMax" : -6,
 			"HesitationMin" : -2,
-			"CalledShotRandMax" : -6,
-			"CalledShotRandMin" : -2,
-			"VigilanceRandMax" : 6,
-			"VigilanceRandMin" : 2,
 			"InspiredMax" : 3,
 			"InspiredMin" : 1,
 			"DefaultTonnage" : 120.0,

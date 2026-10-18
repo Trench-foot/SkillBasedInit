@@ -39,11 +39,11 @@ namespace SkillBasedInit.Patches
 
             Mod.Log.Debug?.Write($"Completing knockdown for actor: {__instance.DistinctId()} from sourceID:{sourceID} stackItemUID:{stackItemUID}.");
 
-            bool applyNextTurn = __instance.HasActivatedThisRound || __instance.Initiative >= Mod.MaxPhase;
-            if (applyNextTurn)
+            if (InitiativeHelper.DelayMustWaitForNextRound(__instance))
             {
                 // ProneInitMod is applied every round while prone, so there's nothing to store
-                Mod.Log.Debug?.Write("Actor has already acted, applying prone modifier next turn.");
+                Mod.Log.Debug?.Write($"Actor has acted or is acting (activated: {__instance.HasActivatedThisRound} begun: {__instance.HasBegunActivation} " +
+                    $"init: {__instance.Initiative}), applying prone modifier next turn.");
                 return;
             }
 
@@ -134,7 +134,7 @@ namespace SkillBasedInit.Patches
         {
             if (penalty <= 0) return; // nothing to do
 
-            bool applyNextTurn = actor.HasActivatedThisRound || actor.Initiative >= Mod.MaxPhase;
+            bool applyNextTurn = InitiativeHelper.DelayMustWaitForNextRound(actor);
             if (applyNextTurn)
             {
                 Mod.Log.Info?.Write($"Applying penalty: {penalty} to {actor.DistinctId()} with init: {actor.Initiative} next turn via {stateStat}.");
@@ -154,6 +154,32 @@ namespace SkillBasedInit.Patches
             actor.Combat.MessageCenter.PublishMessage(
                 new FloatieMessage(actor.GUID, actor.GUID, floatieMsg, FloatieMessage.MessageNature.Debuff)
                 );
+        }
+    }
+
+    // Any melee hit that does damage staggers the target (MeleeHit). Vanilla and CBTBE only delay a melee target through
+    //   the attacker's MeleeHitPushBackPhases, which they route through ForceUnitOnePhaseDown above, so gear stacks on top.
+    //   Harmony runs postfixes even when a prefix skips the original (CBTBE does with PermanentEvasion).
+    [HarmonyPatch(typeof(AbstractActor), "ResolveAttackSequence")]
+    [HarmonyPatch(new Type[] { typeof(string), typeof(int), typeof(int), typeof(AttackDirection) })]
+    public static class AbstractActor_ResolveAttackSequence
+    {
+        public static void Postfix(AbstractActor __instance, int sequenceID)
+        {
+            Mod.Log.Trace?.Write("AA:RAS:post - entered.");
+
+            if (__instance?.Combat == null || !__instance.Combat.TurnDirector.IsInterleaved) return;
+            if (__instance.IsDead || __instance.IsFlaggedForDeath) return;
+
+            AttackDirector.AttackSequence attackSequence = __instance.Combat.AttackDirector.GetAttackSequence(sequenceID);
+            if (attackSequence == null || !attackSequence.isMelee || attackSequence.attacker == null) return;
+            // DFA self damage and CBTBE's self knockdown sequences aren't hits on someone else
+            if (attackSequence.attacker.GUID == __instance.GUID) return;
+            if (!attackSequence.GetAttackDidDamage(__instance.GUID)) return;
+
+            int penalty = __instance.MeleeHitInitMod(attackSequence.attacker);
+            Mod.Log.Debug?.Write($"Melee hit on: {__instance.DistinctId()} by: {attackSequence.attacker.DistinctId()} => penalty: {penalty}");
+            AbstractActor_ForceUnitOnePhaseDown.ApplyDelay(__instance, penalty, ModStats.STATE_MELEE_PUSHBACK, ModText.LT_FT_MELEE_NOW, ModText.LT_FT_MELEE_LATER);
         }
     }
 

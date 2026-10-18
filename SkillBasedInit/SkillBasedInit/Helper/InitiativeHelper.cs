@@ -305,6 +305,37 @@ namespace SkillBasedInit.Helper
             return delay;
         }
 
+        // A delay can only land this round if the unit hasn't started activating. A unit knocked down during its own
+        //   activation (e.g. a failed DFA) has begun but not finished, so a delay applied 'now' would be lost.
+        //   A unit already in the last phase can't be moved any later.
+        public static bool DelayMustWaitForNextRound(AbstractActor actor)
+        {
+            return actor.HasActivatedThisRound || actor.HasBegunActivation || actor.Initiative >= Mod.MaxPhase;
+        }
+
+        // Maps an actor.Initiative (phase 1..30) onto one of the phase track's slots (normally 5): slot 0 is 'P' (past),
+        //   slots 1-3 are the phases around the current one, the last slot is 'F' (future). Always returns a valid index.
+        //   Before combat is interleaved, everyone shares the last slot, matching vanilla once rounds start.
+        public static int PhaseTrackSlot(int phase, int currentPhase, bool isInterleaved, int slotCount)
+        {
+            int lastSlot = slotCount - 1;
+            if (slotCount < 5 || !isInterleaved) return lastSlot < 0 ? 0 : lastSlot;
+
+            // Incoming phase value is actor.Initiative; convert to the displayed value the bounds are in
+            int phaseAsInit = (Mod.MaxPhase + 1) - phase;
+            if (phaseAsInit > Mod.MaxPhase) phaseAsInit = Mod.MaxPhase;
+            else if (phaseAsInit < Mod.MinPhase) phaseAsInit = Mod.MinPhase;
+
+            int[] bounds = CalcPhaseIconBounds(currentPhase);
+            if (phaseAsInit > bounds[1]) return 0;
+            if (phaseAsInit < bounds[3]) return 4;
+            for (int i = 1; i <= 3; i++)
+            {
+                if (bounds[i] == phaseAsInit) return i;
+            }
+            return 2;
+        }
+
         // Calculate the left and right phase boundaries *as initiative*
         //   Will calculate 
         // 30, 29, 28, 27, 26 (red 30) -> phase 1

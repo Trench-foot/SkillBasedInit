@@ -82,7 +82,14 @@ namespace SkillBasedInit
         public int BasePhases = 3;
     }
 
-    // Delay per point of MeleeHitPushBackPhases on a melee hit (vanilla or CBTBE)
+    // Delay on the target of any melee hit that does damage:
+    //   BasePhases + max(0, attacker avg(Piloting,Tactics) - target avg(Guts,Piloting)). 0 disables it.
+    public class MeleeHitCfg
+    {
+        public int BasePhases = 3;
+    }
+
+    // Delay per point of MeleeHitPushBackPhases on a melee hit (vanilla or CBTBE), on top of MeleeHit
     public class MeleePushBackCfg
     {
         public int PhasesPerPoint = 3;
@@ -161,6 +168,7 @@ namespace SkillBasedInit
         public VanillaModifiersCfg VanillaModifiers = new VanillaModifiersCfg();
         public CalledShotCfg CalledShot = new CalledShotCfg();
         public VigilanceCfg Vigilance = new VigilanceCfg();
+        public MeleeHitCfg MeleeHit = new MeleeHitCfg();
         public MeleePushBackCfg MeleePushBack = new MeleePushBackCfg();
         public ArrivalCfg Arrival = new ArrivalCfg();
 
@@ -271,7 +279,7 @@ namespace SkillBasedInit
             Mod.Log.Info?.Write($"  DEBUG:{this.Debug} Trace:{this.Trace}");
             Mod.Log.Info?.Write($"  VanillaModifiers => PhasesPerPoint: {this.VanillaModifiers.PhasesPerPoint}");
             Mod.Log.Info?.Write($"  CalledShot => BasePhases: {this.CalledShot.BasePhases}  Vigilance => BasePhases: {this.Vigilance.BasePhases}");
-            Mod.Log.Info?.Write($"  MeleePushBack => PhasesPerPoint: {this.MeleePushBack.PhasesPerPoint}  Arrival => DelayPhases: {this.Arrival.DelayPhases}");
+            Mod.Log.Info?.Write($"  MeleeHit => BasePhases: {this.MeleeHit.BasePhases}  MeleePushBack => PhasesPerPoint: {this.MeleePushBack.PhasesPerPoint}  Arrival => DelayPhases: {this.Arrival.DelayPhases}");
 
             Mod.Log.Info?.Write($"  == Pilot Tag Modifiers");
             foreach (KeyValuePair<string, int> kvp in Pilot.PilotTagModifiers)
