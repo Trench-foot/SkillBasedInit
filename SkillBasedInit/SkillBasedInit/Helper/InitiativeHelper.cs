@@ -1,4 +1,5 @@
 ﻿using IRBTModUtils.Extension;
+using System.Collections.Generic;
 
 namespace SkillBasedInit.Helper
 {
@@ -19,6 +20,37 @@ namespace SkillBasedInit.Helper
         {
             int phase = (Mod.MaxPhase + 1) - initiative;
             return phase;
+        }
+
+        public static bool IsValidInitiative(int initiative)
+        {
+            return initiative >= Mod.MinPhase && initiative <= Mod.MaxPhase;
+        }
+
+        // Display value for an actor.Initiative, clamped to the valid range. Init of 1 displays as 30, 30 displays as 1.
+        public static string InitiativeToString(int initiative)
+        {
+            if (!IsValidInitiative(initiative))
+            {
+                Mod.Log.Info?.Write($"InitiativeToString - ERROR - Bad initiative of {initiative} detected, clamping for display.");
+                initiative = initiative > Mod.MaxPhase ? Mod.MaxPhase : Mod.MinPhase;
+            }
+            return InitiativeToPhase(initiative).ToString();
+        }
+
+        // Finds the tonnage bracket for a unit: the smallest key >= tonnage. Tonnage above every key uses the largest key.
+        //   Keys are sorted explicitly, as Dictionary enumeration order isn't guaranteed.
+        public static int TonnageToPhase(Dictionary<int, int> initBaseByTonnage, int tonnage)
+        {
+            if (initBaseByTonnage == null || initBaseByTonnage.Count == 0) return 0;
+
+            List<int> keys = new List<int>(initBaseByTonnage.Keys);
+            keys.Sort();
+            foreach (int key in keys)
+            {
+                if (tonnage <= key) return initBaseByTonnage[key];
+            }
+            return initBaseByTonnage[keys[keys.Count - 1]];
         }
 
         public static void UpdateInitiative(AbstractActor actor)

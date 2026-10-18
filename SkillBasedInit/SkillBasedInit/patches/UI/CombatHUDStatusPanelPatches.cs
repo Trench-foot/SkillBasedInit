@@ -71,14 +71,14 @@ namespace SkillBasedInit.patches
             int proneMod = actor.ProneInitMod();
             if (proneMod != 0)
             {
-                chassisDetails.Add(new Text(Mod.LocalizedText.Tooltip[ModText.LT_TT_CRIPPLED], new object[] { proneMod }).ToString());
+                chassisDetails.Add(new Text(Mod.LocalizedText.Tooltip[ModText.LT_TT_PRONE], new object[] { proneMod }).ToString());
                 initiativeBase += proneMod;
             }
 
             int crippledMod = actor.CrippledInitModifier();
             if (crippledMod != 0)
             {
-                chassisDetails.Add(new Text(Mod.LocalizedText.Tooltip[ModText.LT_TT_PRONE], new object[] { crippledMod }).ToString());
+                chassisDetails.Add(new Text(Mod.LocalizedText.Tooltip[ModText.LT_TT_CRIPPLED], new object[] { crippledMod }).ToString());
                 initiativeBase += crippledMod;
             }
 

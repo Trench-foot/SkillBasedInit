@@ -12,7 +12,7 @@
 		"MECHBAY_LANCE" : "<space=2em><color=#{0}>{1:+0;-#} lance</color>",
 		"MECHBAY_TACTICS" : "<space=2em>{0:+0;-#} tactics",
 		"MECHBAY_TOTAL" : "<b>TOTAL</b>: {0}",
-		"MECHBAY_RANDOM" : "<space=2em><color=#FF0000>-{0} to -{1} random</color> (<i>reduced by tactics</i>)",
+		"MECHBAY_RANDOM" : "<space=2em><color=#FF0000>-{0} to -{1} random</color> (<i>reduced by piloting</i>)",
 		"MECHBAY_EXPECTED_NO_PILOT" : "<b>EXPECTED PHASE</b>: {0}",
 		"MECHBAY_EXPECTED" : "<b>EXPECTED PHASE</b>: {0} to {1}",
 	},
@@ -31,7 +31,7 @@
 		"TOOLTIP_HESITATION" : "<color=#FF0000>{0} hesitation</color>",
 		"TOOLTIP_CALLED_SHOT" : "<color=#FF0000>{0} called shot</color>",
 		"TOOLTIP_VIGILANCE" : "<color=#00FF00>{0} vigilance</color>",
-		"TOOLTIP_RANDOM" : "\nRANDOM => <color=#FF0000>{0} to {1}</color> <i>(reduced by tactics)</i>",
+		"TOOLTIP_RANDOM" : "\nRANDOM => <color=#FF0000>{0} to {1}</color> <i>(reduced by piloting)</i>",
 		"TOOLTIP_EXPECTED" : "EXPECTED PHASE: <b>{0} to {1}</b>",
 		"TOOLTIP_HOVER" : "<i>Hover initiative in Mechlab & Deploy for details.</i>",
 	}

@@ -226,16 +226,8 @@ namespace SkillBasedInit.Helper
         {
             int unitTonnage = (int)Math.Ceiling(actor.GetUnitTonnage());
             UnitCfg opts = actor.GetUnitConfig();
-            int initPhase = 0;
-            foreach (KeyValuePair<int, int> kvp in opts.InitBaseByTonnage)
-            {
-                Mod.Log.Debug?.Write($"  -- key: {kvp.Key}  value: {kvp.Value}");
-                if (unitTonnage <= kvp.Key)
-                {
-                    initPhase = kvp.Value;
-                    break;
-                }
-            }
+            int initPhase = InitiativeHelper.TonnageToPhase(opts.InitBaseByTonnage, unitTonnage);
+
             // Now invert to an initiative modifier
             int baseInit = InitiativeHelper.PhaseToInitiative(initPhase);
             Mod.Log.Debug?.Write($"Using initPhase: {initPhase} => baseInit: {baseInit} for actor: {actor.DistinctId()} with tonnage: {unitTonnage}");
@@ -247,18 +239,8 @@ namespace SkillBasedInit.Helper
         {
             int unitTonnage = (int)Math.Ceiling(mechDef.GetUnitTonnage());
             UnitCfg opts = mechDef.GetUnitConfig();
-            int initPhase = 0;
-            foreach (KeyValuePair<int, int> kvp in opts.InitBaseByTonnage)
-            {
-                if (unitTonnage >= kvp.Key)
-                {
-                    initPhase = kvp.Value;
-                }
-                else
-                {
-                    break;
-                }
-            }
+            // Must match the actor lookup, or the Mech Bay shows a different bracket than combat uses
+            int initPhase = InitiativeHelper.TonnageToPhase(opts.InitBaseByTonnage, unitTonnage);
 
             // Now invert to an initiative modifier
             int baseInit = InitiativeHelper.PhaseToInitiative(initPhase);
@@ -469,7 +451,7 @@ namespace SkillBasedInit.Helper
             if (customInfo != null && (customInfo.Naval || customInfo.FakeVehicle)) return 0;
 
             int boundsMin, boundsMax;
-            if (customInfo.SquadInfo != null && customInfo.SquadInfo.Troopers > 1)
+            if (customInfo?.SquadInfo != null && customInfo.SquadInfo.Troopers > 1)
             {
                 boundsMin = Mod.Config.Trooper.ShutdownModifierMin;
                 boundsMax = Mod.Config.Trooper.ShutdownModifierMax;

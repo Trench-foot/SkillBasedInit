@@ -5,10 +5,10 @@ using SkillBasedInit.Helper;
 namespace SBITests
 {
     [TestClass]
-    public class GeneralTests
+    public class GeneralTests : SBITestBase
     {
-        [ClassInitialize]
-        public static void ClassInitialize(TestContext testContext)
+        [TestInitialize]
+        public void ClassInitialize()
         {
             // Patch isMoraleInspired to return true
             TestGlobalInit.HarmonyInst.Patch(TestGlobalInit.MI_IsFuryInspired, prefix: TestGlobalInit.HM_AlwaysFalse);

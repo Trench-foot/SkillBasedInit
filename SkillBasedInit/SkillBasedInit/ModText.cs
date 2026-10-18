@@ -58,7 +58,7 @@ namespace SkillBasedInit
             { LT_MB_LANCE, "<space=2em><color=#{0}>{1:+0;-#} lance</color>" },
             { LT_MB_TACTICS, "<space=2em>{0:+0;-#} tactics" },
             { LT_MB_TOTAL, "<b>TOTAL</b>: {0}" },
-            { LT_MB_RANDOM, "<space=2em><color=#FF0000>{0} to {1} random</color> (<i>reduced by tactics</i>)" },
+            { LT_MB_RANDOM, "<space=2em><color=#FF0000>{0} to {1} random</color> (<i>reduced by piloting</i>)" },
             { LT_MB_EXPECTED_NO_PILOT, "<b>EXPECTED PHASE</b>: {0}" },
             { LT_MB_EXPECTED, "<b>EXPECTED PHASE</b>: {0} to {1}" },
         };
@@ -76,14 +76,14 @@ namespace SkillBasedInit
 
             { LT_TT_TACTICS, "PILOT => Tactics: <color=#00FF00>{0:+0}</color>" },
             { LT_TT_PILOT_TAGS, "<color=#{0}>{1:+0;-#} pilot tags</color>" },
-            { LT_TT_INSPIRED, "<color=#00FF00>{0}inspired</color>" },
+            { LT_TT_INSPIRED, "<color=#00FF00>{0} inspired</color>" },
             { LT_TT_INJURY, "<color=#{0}>{1:+0;-#} injury</color>" },
 
             { LT_TT_HESITATION, "<color=#FF0000>{0} hesitation</color>" },
             { LT_TT_CALLED_SHOT, "<color=#FF0000>{0} called shot</color>" },
             { LT_TT_VIGILANCE, "<color=#00FF00>{0} vigilance</color>" },
 
-            { LT_TT_RANDOM, "\nRANDOM => <color=#FF0000>-{0} to -{1}</color> <i>(reduced by tactics)</i>" },
+            { LT_TT_RANDOM, "\nRANDOM => <color=#FF0000>-{0} to -{1}</color> <i>(reduced by piloting)</i>" },
             { LT_TT_EXPECTED, "EXPECTED PHASE: <b>{0} to {1}</b>" },
             { LT_TT_HOVER, "<i>Hover initiative in Mechlab & Deploy for details.</i>" },
 

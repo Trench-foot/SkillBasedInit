@@ -60,22 +60,22 @@
     <PackageReference Include="HarmonyX" Version="2.15.0">
     </PackageReference>
     <Reference Include="Assembly-CSharp">
-      <HintPath>..\..\..\..\BATTLETECH\BattleTech_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <HintPath>$(BattleTechGameDir)\BattleTech_Data\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
     <Reference Include="CustomAmmoCategories">
-      <HintPath>..\..\..\..\BATTLETECH\Mods\CustomAmmoCategories\CustomAmmoCategories.dll</HintPath>
+      <HintPath>$(BattleTechGameDir)\Mods\CustomAmmoCategories\CustomAmmoCategories.dll</HintPath>
     </Reference>
     <Reference Include="CustomUnits">
-      <HintPath>..\..\..\..\BATTLETECH\Mods\CustomUnits\CustomUnits.dll</HintPath>
+      <HintPath>$(BattleTechGameDir)\Mods\CustomUnits\CustomUnits.dll</HintPath>
     </Reference>
     <Reference Include="IRBTModUtils">
-      <HintPath>..\..\..\..\BATTLETECH\Mods\IRBTModUtils\IRBTModUtils.dll</HintPath>
+      <HintPath>$(BattleTechGameDir)\Mods\IRBTModUtils\IRBTModUtils.dll</HintPath>
     </Reference>
     <Reference Include="System">
-      <HintPath>..\..\..\..\BATTLETECH\BattleTech_Data\Managed\System.dll</HintPath>
+      <HintPath>$(BattleTechGameDir)\BattleTech_Data\Managed\System.dll</HintPath>
     </Reference>
     <Reference Include="System.Core">
-      <HintPath>..\..\..\..\BATTLETECH\BattleTech_Data\Managed\System.Core.dll</HintPath>
+      <HintPath>$(BattleTechGameDir)\BattleTech_Data\Managed\System.Core.dll</HintPath>
     </Reference>
   </ItemGroup>
   

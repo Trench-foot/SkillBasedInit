@@ -23,8 +23,9 @@ namespace SkillBasedInit.Helper
             int adjustedMax = invertedMax - skillMod;
 
             Mod.Log.Debug?.Write($"  adjustedBound: {adjustedMax} = config.RanBoundsMax: {invertedMax} - skillMod: {skillMod}");
-            if (adjustedMax < min)
-                adjustedMax = min;
+            // Compare against the inverted min; the raw min is negative, so a high skill could push max below min and make Random.Next throw
+            if (adjustedMax < invertedMin)
+                adjustedMax = invertedMin;
 
             return new int[] { invertedMin, adjustedMax };
         }

@@ -6,7 +6,7 @@ using System;
 namespace SBITests
 {
     [TestClass]
-    public class ShutdownTests
+    public class ShutdownTests : SBITestBase
     {
         [TestInitialize]
         public void ClassInitialize()

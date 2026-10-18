@@ -1,4 +1,5 @@
-﻿using IRBTModUtils.Extension;
+﻿using BattleTech.Save.Test;
+using IRBTModUtils.Extension;
 using SkillBasedInit.Helper;
 using System;
 
@@ -44,140 +45,53 @@ namespace SkillBasedInit
 
     }
 
+    // InitiativeToString is static, so there's no instance to correct here; the display value is clamped instead.
     [HarmonyPatch(typeof(AbstractActor), "InitiativeToString")]
     public static class AbstractActor_InitiativeToString
     {
-        public static void Postfix(AbstractActor __instance, ref string __result, int initiative)
+        public static void Postfix(ref string __result, int initiative)
         {
             Mod.Log.Trace?.Write($"AA:ITS - entered for init:{initiative}.");
-            switch (initiative)
-            {
-                case 1:
-                    __result = "30";
-                    break;
-                case 2:
-                    __result = "29";
-                    break;
-                case 3:
-                    __result = "28";
-                    break;
-                case 4:
-                    __result = "27";
-                    break;
-                case 5:
-                    __result = "26";
-                    break;
-                case 6:
-                    __result = "25";
-                    break;
-                case 7:
-                    __result = "24";
-                    break;
-                case 8:
-                    __result = "23";
-                    break;
-                case 9:
-                    __result = "22";
-                    break;
-                case 10:
-                    __result = "21";
-                    break;
-                case 11:
-                    __result = "20";
-                    break;
-                case 12:
-                    __result = "19";
-                    break;
-                case 13:
-                    __result = "18";
-                    break;
-                case 14:
-                    __result = "17";
-                    break;
-                case 15:
-                    __result = "16";
-                    break;
-                case 16:
-                    __result = "15";
-                    break;
-                case 17:
-                    __result = "14";
-                    break;
-                case 18:
-                    __result = "13";
-                    break;
-                case 19:
-                    __result = "12";
-                    break;
-                case 20:
-                    __result = "11";
-                    break;
-                case 21:
-                    __result = "10";
-                    break;
-                case 22:
-                    __result = "9";
-                    break;
-                case 23:
-                    __result = "8";
-                    break;
-                case 24:
-                    __result = "7";
-                    break;
-                case 25:
-                    __result = "6";
-                    break;
-                case 26:
-                    __result = "5";
-                    break;
-                case 27:
-                    __result = "4";
-                    break;
-                case 28:
-                    __result = "3";
-                    break;
-                case 29:
-                    __result = "2";
-                    break;
-                case 30:
-                    __result = "1";
-                    break;
-                default:
-                    if (initiative > Mod.MaxPhase)
-                    {
-                        // This looks weird, but it's the only place we can intercept a negative init that I've found.
-                        if (__instance != null) { __instance.Initiative = Mod.MaxPhase; }
-                        Mod.Log.Info?.Write($"AbstractActor:InitiativeToString - ERROR - Bad initiative of {initiative} detected!");
-                        __result = "1";
-                    }
-                    else if (initiative < Mod.MinPhase)
-                    {
-                        // This looks weird, but it's the only place we can intercept a negative init that I've found.
-                        if (__instance != null) { __instance.Initiative = Mod.MinPhase; }
-                        Mod.Log.Info?.Write($"AbstractActor:InitiativeToString - ERROR - Bad initiative of {initiative} detected!");
-                        __result = "30";
-                    }
-                    break;
-            }
+            __result = InitiativeHelper.InitiativeToString(initiative);
             Mod.Log.Trace?.Write($" returning {__result} for initiative {initiative}");
         }
     }
 
-    // TODO: This is likely inlined and doesn't work- confirm
+    // The getter is small enough that callers may inline it, so AbstractActor_Hydrate also guards the load path.
     [HarmonyPatch(typeof(AbstractActor))]
     [HarmonyPatch("HasValidInitiative", MethodType.Getter)]
     public static class AbstractActor_HasValidInitiative
     {
-        public static void Postfix(AbstractActor __instance, bool __result)
+        public static void Postfix(AbstractActor __instance, ref bool __result)
         {
             Mod.Log.Debug?.Write("AA:HVI - entered.");
-            bool isValid = __instance.Initiative >= Mod.MinPhase && __instance.Initiative <= Mod.MaxPhase;
+            bool isValid = InitiativeHelper.IsValidInitiative(__instance.Initiative);
             if (!isValid)
             {
                 Mod.Log.Info?.Write($"Actor:{__instance.DistinctId()} has invalid initiative {__instance.Initiative}!");
             }
             __result = isValid;
             Mod.Log.Debug?.Write($"AbstractActor:HasValidInitiative returning {__result} for {__instance.Initiative}");
+        }
+    }
+
+    // Vanilla Hydrate resets any initiative outside 1-5 to BaseInitiative on load. Restore the saved value if it's valid for 30 phases.
+    [HarmonyPatch(typeof(AbstractActor), "Hydrate")]
+    [HarmonyPatch(new Type[] { typeof(SerializableReferenceContainer), typeof(CombatGameState) })]
+    public static class AbstractActor_Hydrate
+    {
+        public static void Prefix(AbstractActor __instance, ref int __state)
+        {
+            __state = __instance.Initiative;
+        }
+
+        public static void Postfix(AbstractActor __instance, int __state)
+        {
+            if (__instance.Initiative != __state && InitiativeHelper.IsValidInitiative(__state))
+            {
+                Mod.Log.Info?.Write($"Restoring saved initiative: {__state} for actor: {__instance.DistinctId()}, vanilla reset it to: {__instance.Initiative}");
+                __instance.Initiative = __state;
+            }
         }
     }
 

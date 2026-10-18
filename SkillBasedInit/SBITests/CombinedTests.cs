@@ -6,10 +6,10 @@ using System;
 namespace SBITests
 {
     [TestClass]
-    public class CombinedTests
+    public class CombinedTests : SBITestBase
     {
-        [ClassInitialize]
-        public static void ClassInitialize(TestContext testContext)
+        [TestInitialize]
+        public void ClassInitialize()
         {
             // Patch isMoraleInspired to return true
             Mod.Config.Mech.CrippledModifierMax = -6;

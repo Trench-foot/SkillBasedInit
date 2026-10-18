@@ -110,26 +110,13 @@ namespace SBITests
             IRBTModUtils.Mod.Config = new IRBTModUtils.ModConfig();
             IRBTModUtils.Mod.Config.Init();
 
-            IRBTModUtils.Mod.Log = new DeferringLogger(null, string.Empty, string.Empty, false, false);
+            // Newer IRBTModUtils builds Path.Combine the mod dir, so it can't be null
+            string logDir = System.IO.Path.GetTempPath();
+            IRBTModUtils.Mod.Log = new DeferringLogger(logDir, "sbi_tests_irbt", "IRBT", false, false);
 
-            Mod.Log = new DeferringLogger(null, string.Empty, string.Empty, false, false);
+            Mod.Log = new DeferringLogger(logDir, "sbi_tests", "SBI", false, false);
 
-            Mod.Config = new ModConfig();
-
-            Mod.Config.Mech = TestConsts.DefaultUnitCfg.ShallowCopy();
-            Mod.Config.Mech.TypeMod = 1;
-
-            Mod.Config.Trooper = TestConsts.DefaultUnitCfg.ShallowCopy();
-            Mod.Config.Trooper.TypeMod = 2;
-
-            Mod.Config.Naval = TestConsts.DefaultUnitCfg.ShallowCopy();
-            Mod.Config.Naval.TypeMod = 3;
-
-            Mod.Config.Vehicle = TestConsts.DefaultUnitCfg.ShallowCopy();
-            Mod.Config.Vehicle.TypeMod = 4;
-
-            Mod.Config.Turret = TestConsts.DefaultTurretCfg;
-            Mod.Config.Turret.TypeMod = 5;
+            ResetModConfig();
 
             CUSettings testCUSettings = new CustomUnits.CUSettings();
             testCUSettings.PartialMovementOnlyWalkByDefault = false;
@@ -156,10 +143,50 @@ namespace SBITests
             HM_AlwaysTrue = new HarmonyMethod(typeof(AlwaysTruePrefix), "Prefix");
         }
 
+        // Builds a fresh Mod.Config so no test can leak settings into another. ShallowCopy shares the
+        //   tonnage dictionary, so copy it as well.
+        public static void ResetModConfig()
+        {
+            Mod.Config = new ModConfig();
+
+            Mod.Config.Mech = CopyUnitCfg(TestConsts.DefaultUnitCfg);
+            Mod.Config.Mech.TypeMod = 1;
+
+            Mod.Config.Trooper = CopyUnitCfg(TestConsts.DefaultUnitCfg);
+            Mod.Config.Trooper.TypeMod = 2;
+
+            Mod.Config.Naval = CopyUnitCfg(TestConsts.DefaultUnitCfg);
+            Mod.Config.Naval.TypeMod = 3;
+
+            Mod.Config.Vehicle = CopyUnitCfg(TestConsts.DefaultUnitCfg);
+            Mod.Config.Vehicle.TypeMod = 4;
+
+            Mod.Config.Turret = (TurretCfg)CopyUnitCfg(TestConsts.DefaultTurretCfg);
+            Mod.Config.Turret.TypeMod = 5;
+        }
+
+        private static UnitCfg CopyUnitCfg(UnitCfg source)
+        {
+            UnitCfg copy = source.ShallowCopy();
+            copy.InitBaseByTonnage = new Dictionary<int, int>(source.InitBaseByTonnage);
+            return copy;
+        }
+
         [AssemblyCleanup]
         public static void TearDown()
         {
 
+        }
+    }
+
+    // Every test class inherits this, so each test starts from the default config. MSTest runs base
+    //   class [TestInitialize] methods before derived ones, so class-specific setup still applies on top.
+    public abstract class SBITestBase
+    {
+        [TestInitialize]
+        public void ResetConfigBeforeTest()
+        {
+            TestGlobalInit.ResetModConfig();
         }
     }
 
