@@ -38,8 +38,7 @@ namespace SkillBasedInit.Helper
 
             int[] bounds = RandomnessBounds(pilot, config.RandomnessMin, config.RandomnessMax);
 
-            // Add +1 to max BECUASE MICROSOFT SUCKS (see https://docs.microsoft.com/en-us/dotnet/api/system.random.next?view=net-6.0#system-random-next(system-int32-system-int32)
-            int modifier = Mod.Random.Next(bounds[0], bounds[1] + 1);
+            int modifier = DeterministicRoll.Roll(pilot, RollKind.Randomness, bounds[0], bounds[1]);
             Mod.Log.Debug?.Write($"  modifier: {modifier} => Math.Rand({bounds[0]}, {bounds[1]})");
 
             return modifier;
@@ -64,8 +63,8 @@ namespace SkillBasedInit.Helper
             int adjustedMin = invertedMin + skillMod;
             int adjustedMax = invertedMax + skillMod;
 
-            // Add +1 to max BECUASE MICROSOFT SUCKS (see https://docs.microsoft.com/en-us/dotnet/api/system.random.next?view=net-6.0#system-random-next(system-int32-system-int32)
-            int modifier = Mod.Random.Next(adjustedMax, adjustedMin + 1);
+            // Bonus values are negative, so adjustedMax is the low end
+            int modifier = DeterministicRoll.Roll(pilot, RollKind.Inspired, adjustedMax, adjustedMin);
             Mod.Log.Debug?.Write($"  modifier: {modifier} => Math.Rand({adjustedMax}, {adjustedMin})");
 
             return modifier;

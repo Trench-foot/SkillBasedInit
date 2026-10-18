@@ -18,7 +18,7 @@ namespace SkillBasedInit
         public static string ModDir;
         public static ModConfig Config;
         public static ModText LocalizedText;
-        public static readonly Random Random = new Random();
+        // Rolls go through Helper.DeterministicRoll, not System.Random
 
         public const int MaxPhase = 30;
         public const int MinPhase = 1;

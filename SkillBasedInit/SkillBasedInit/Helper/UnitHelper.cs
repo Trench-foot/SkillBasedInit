@@ -376,8 +376,7 @@ namespace SkillBasedInit.Helper
             if (adjustedMax <= adjustedMin)
                 adjustedMax = adjustedMin + 1;
 
-            // Add +1 to max BECUASE MICROSOFT SUCKS (see https://docs.microsoft.com/en-us/dotnet/api/system.random.next?view=net-6.0#system-random-next(system-int32-system-int32)
-            int finalMod = Mod.Random.Next(adjustedMin, adjustedMax + 1);
+            int finalMod = DeterministicRoll.Roll(actor, RollKind.Prone, adjustedMin, adjustedMax);
             Mod.Log.Debug?.Write($"  finalMod: {finalMod}");
             return finalMod;
         }
@@ -432,8 +431,7 @@ namespace SkillBasedInit.Helper
             if (adjustedMax <= adjustedMin)
                 adjustedMax = adjustedMin + 1;
 
-            // Add +1 to max BECUASE MICROSOFT SUCKS (see https://docs.microsoft.com/en-us/dotnet/api/system.random.next?view=net-6.0#system-random-next(system-int32-system-int32)
-            int finalMod = Mod.Random.Next(adjustedMin, adjustedMax + 1);
+            int finalMod = DeterministicRoll.Roll(actor, RollKind.Crippled, adjustedMin, adjustedMax);
             Mod.Log.Debug?.Write($"  finalMod: {finalMod}");
             return finalMod;
         }
@@ -479,8 +477,7 @@ namespace SkillBasedInit.Helper
                 adjustedMax = adjustedMin + 1;
             Mod.Log.Debug?.Write($"  adjustedMax: {adjustedMax} = max: {boundsMax} - pilotMod: {pilotMod}");
 
-            // Add +1 to max BECUASE MICROSOFT SUCKS (see https://docs.microsoft.com/en-us/dotnet/api/system.random.next?view=net-6.0#system-random-next(system-int32-system-int32)
-            int finalMod = Mod.Random.Next(adjustedMin, adjustedMax + 1);
+            int finalMod = DeterministicRoll.Roll(actor, RollKind.Shutdown, adjustedMin, adjustedMax);
             Mod.Log.Debug?.Write($"  finalMod: {finalMod} = Random({adjustedMin}, {adjustedMax})");
             return finalMod;
         }
@@ -496,8 +493,7 @@ namespace SkillBasedInit.Helper
             Mod.Log.Debug?.Write($"Unit: {actor.DistinctId()} hestiation raw bounds => min: {invertedMin} to max: {invertedMax}");
 
             // Invert because we assume the range is negative
-            // Add +1 to max BECUASE MICROSOFT SUCKS (see https://docs.microsoft.com/en-us/dotnet/api/system.random.next?view=net-6.0#system-random-next(system-int32-system-int32)
-            int rawMod = Mod.Random.Next(invertedMin, invertedMax + 1);
+            int rawMod = DeterministicRoll.Roll(actor, RollKind.Hesitation, invertedMin, invertedMax);
 
             // Assume the stat is a phase mod, and invert
             int actorMod = actor.StatCollection.GetValue<int>(ModStats.MOD_HESITATION) * -1;

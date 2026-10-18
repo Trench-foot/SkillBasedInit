@@ -44,8 +44,8 @@
 		
 		"Mech" : {
 			"TypeMod" : 0,
-			"RandomnessMax" : -10,
-			"RandomnessMin" : -2,
+			"RandomnessMax" : -9,
+			"RandomnessMin" : -3,
 			"HesitationMax" : -6,
 			"HesitationMin" : -2,
 			"CalledShotRandMax" : -6,
@@ -78,8 +78,8 @@
 		},
 		"Trooper" : {
 			"TypeMod" : 0,
-			"RandomnessMax" : -10,
-			"RandomnessMin" : -2,
+			"RandomnessMax" : -9,
+			"RandomnessMin" : -3,
 			"HesitationMax" : -6,
 			"HesitationMin" : -2,
 			"CalledShotRandMax" : -6,
@@ -108,8 +108,8 @@
 		},
 		"Naval" : {
 			"TypeMod" : -2,
-			"RandomnessMax" : -10,
-			"RandomnessMin" : -2,
+			"RandomnessMax" : -9,
+			"RandomnessMin" : -3,
 			"HesitationMax" : -6,
 			"HesitationMin" : -2,
 			"CalledShotRandMax" : -6,
@@ -138,8 +138,8 @@
 		},
 		"Vehicle" : {
 			"TypeMod" : -2,
-			"RandomnessMax" : -10,
-			"RandomnessMin" : -2,
+			"RandomnessMax" : -9,
+			"RandomnessMin" : -3,
 			"HesitationMax" : -6,
 			"HesitationMin" : -2,
 			"CalledShotRandMax" : -6,
@@ -168,8 +168,8 @@
 		},
 		"Turret" : {
 			"TypeMod" : -6,
-			"RandomnessMax" : -10,
-			"RandomnessMin" : -2,
+			"RandomnessMax" : -9,
+			"RandomnessMin" : -3,
 			"HesitationMax" : -6,
 			"HesitationMin" : -2,
 			"CalledShotRandMax" : -6,

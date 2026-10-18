@@ -10,9 +10,9 @@ namespace SkillBasedInit
 
         public int TypeMod = DEFAULT_TYPE_MOD;
 
-        // The maximum value used for randomness, from 0 to this value. Offset by piloting mod.
-        public int RandomnessMax = -10;
-        public int RandomnessMin = -2;
+        // Per-round random delay, from Min to Max phases (as negatives). Piloting reduces Max. Upstream was -2 to -10.
+        public int RandomnessMax = -9;
+        public int RandomnessMin = -3;
 
         public int HesitationMax = -6;
         public int HesitationMin = -2;

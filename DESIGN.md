@@ -84,9 +84,18 @@ Vanilla works on 5 phases; upstream SBI and the fork work on 30. "Upstream SBI" 
 
 ## Randomness
 
-- Rolls are deterministic. Each one is a hash of `(actor GUID, round, roll kind)` mapped into the configured range.
-- Reloading a save reproduces the same rolls, and rolls don't depend on the order in which anything else used the RNG.
-- `System.Random` is no longer used. `Combat.NetworkRandom` isn't used either: it restarts from seed 0 each combat and isn't saved.
+- Rolls are deterministic (`Helper/DeterministicRoll.cs`).
+  - Each roll is a hash of `(contract GUID, actor GUID, round, roll kind)`: FNV-1a over UTF-8, then the MurmurHash3 finalizer, then mapped into the configured range.
+  - `string.GetHashCode` isn't used, as it isn't guaranteed stable between runtimes.
+- Roll kinds are Randomness, Inspired, Prone, Crippled, Shutdown and Hesitation. Each is hashed separately, so they don't move together.
+- What this gives you:
+  - Reloading a save reproduces the same rolls.
+  - Rolls don't depend on the order in which anything else rolled.
+  - The status tooltip shows the same prone/crippled/shutdown values combat applied. Upstream re-rolled them on every hover.
+- A given unit gets one value per kind per round. For example, a knockdown's immediate prone penalty and the tooltip agree within that round.
+- `System.Random` (`Mod.Random`) is removed. `Combat.NetworkRandom` isn't used either: it restarts from seed 0 each combat and isn't saved.
+- Default `RandomnessMin/Max` is now −3/−9 in code and in all five unit classes in `mod.json`. Upstream was −2/−10. Hesitation stays −2/−6.
+- The old range-based unit tests still pass, but each now sees a single deterministic value per unit and round. `DeterministicRollTests` covers range, spread across 1,000 units, reload reproduction, and per-round/per-kind variation.
 
 ## Config changes (`mod.json`)
 
