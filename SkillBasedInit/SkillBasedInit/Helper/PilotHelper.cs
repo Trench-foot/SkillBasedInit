@@ -23,8 +23,9 @@ namespace SkillBasedInit.Helper
             int adjustedMax = invertedMax - skillMod;
 
             Mod.Log.Debug?.Write($"  adjustedBound: {adjustedMax} = config.RanBoundsMax: {invertedMax} - skillMod: {skillMod}");
-            if (adjustedMax < min)
-                adjustedMax = min;
+            // Compare against the inverted min; the raw min is negative, so a high skill could push max below min and make Random.Next throw
+            if (adjustedMax < invertedMin)
+                adjustedMax = invertedMin;
 
             return new int[] { invertedMin, adjustedMax };
         }
@@ -37,8 +38,7 @@ namespace SkillBasedInit.Helper
 
             int[] bounds = RandomnessBounds(pilot, config.RandomnessMin, config.RandomnessMax);
 
-            // Add +1 to max BECUASE MICROSOFT SUCKS (see https://docs.microsoft.com/en-us/dotnet/api/system.random.next?view=net-6.0#system-random-next(system-int32-system-int32)
-            int modifier = Mod.Random.Next(bounds[0], bounds[1] + 1);
+            int modifier = DeterministicRoll.Roll(pilot, RollKind.Randomness, bounds[0], bounds[1]);
             Mod.Log.Debug?.Write($"  modifier: {modifier} => Math.Rand({bounds[0]}, {bounds[1]})");
 
             return modifier;
@@ -63,8 +63,8 @@ namespace SkillBasedInit.Helper
             int adjustedMin = invertedMin + skillMod;
             int adjustedMax = invertedMax + skillMod;
 
-            // Add +1 to max BECUASE MICROSOFT SUCKS (see https://docs.microsoft.com/en-us/dotnet/api/system.random.next?view=net-6.0#system-random-next(system-int32-system-int32)
-            int modifier = Mod.Random.Next(adjustedMax, adjustedMin + 1);
+            // Bonus values are negative, so adjustedMax is the low end
+            int modifier = DeterministicRoll.Roll(pilot, RollKind.Inspired, adjustedMax, adjustedMin);
             Mod.Log.Debug?.Write($"  modifier: {modifier} => Math.Rand({adjustedMax}, {adjustedMin})");
 
             return modifier;
@@ -110,6 +110,16 @@ namespace SkillBasedInit.Helper
         public static int AverageGutsAndTacticsMod(this Pilot pilot)
         {
             return (int)Math.Ceiling((pilot.SBIGutsMod() + pilot.SBITacticsMod()) / 2.0);
+        }
+
+        public static int AveragePilotingAndTacticsMod(this Pilot pilot)
+        {
+            return (int)Math.Ceiling((pilot.SBIPilotingMod() + pilot.SBITacticsMod()) / 2.0);
+        }
+
+        public static int AverageGutsAndPilotingMod(this Pilot pilot)
+        {
+            return (int)Math.Ceiling((pilot.SBIGutsMod() + pilot.SBIPilotingMod()) / 2.0);
         }
 
         public static void LogPilotStats(this Pilot pilot)

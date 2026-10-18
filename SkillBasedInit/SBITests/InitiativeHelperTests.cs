@@ -5,7 +5,7 @@ using SkillBasedInit.Helper;
 namespace SBITests
 {
     [TestClass]
-    public class InitiativeHelperTests
+    public class InitiativeHelperTests : SBITestBase
     {
         // Phases are tracked from 1 - 30, but display to the user as 30 to 1 (inverted)
         [TestMethod]

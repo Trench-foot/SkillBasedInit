@@ -4,7 +4,7 @@ using SkillBasedInit.Helper;
 namespace SBITests
 {
     [TestClass]
-    public class ConversionTests
+    public class ConversionTests : SBITestBase
     {
 
         [TestMethod]

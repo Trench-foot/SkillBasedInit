@@ -10,15 +10,16 @@ namespace SkillBasedInit
     public class Mod
     {
 
-        public const string HarmonyPackage = "us.frostraptor.SkillBasedInit";
-        public const string LogName = "skill_based_init";
-        public const string LogLabel = "SBI";
+        // BTX fork: distinct Harmony ID and log so it can't be confused with RogueTech's SkillBasedInit
+        public const string HarmonyPackage = "btx.SkillBasedInit";
+        public const string LogName = "btx_skill_based_init";
+        public const string LogLabel = "BTX_SBI";
 
         public static DeferringLogger Log;
         public static string ModDir;
         public static ModConfig Config;
         public static ModText LocalizedText;
-        public static readonly Random Random = new Random();
+        // Rolls go through Helper.DeterministicRoll, not System.Random
 
         public const int MaxPhase = 30;
         public const int MinPhase = 1;

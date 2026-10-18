@@ -10,18 +10,15 @@ namespace SkillBasedInit
 
         public int TypeMod = DEFAULT_TYPE_MOD;
 
-        // The maximum value used for randomness, from 0 to this value. Offset by piloting mod.
-        public int RandomnessMax = -10;
-        public int RandomnessMin = -2;
+        // Per-round random delay, from Min to Max phases (as negatives). Piloting reduces Max. Upstream was -2 to -10.
+        public int RandomnessMax = -9;
+        public int RandomnessMin = -3;
 
         public int HesitationMax = -6;
         public int HesitationMin = -2;
 
-        public int CalledShotRandMax = -6;
-        public int CalledShotRandMin = -2;
-
-        public int VigilanceRandMax = 6;
-        public int VigilanceRandMin = 2;
+        // CalledShotRandMin/Max and VigilanceRandMin/Max were removed; see CalledShotCfg and VigilanceCfg.
+        //   Old mod.json values are ignored on load.
 
         public int InspiredMax = 3;
         public int InspiredMin = 1;
@@ -64,6 +61,44 @@ namespace SkillBasedInit
         {
 
         };
+    }
+
+    // Converts vanilla/modpack BaseInitiative modifiers (gear, abilities, quirks, injuries) into SBI phases.
+    //   Vanilla content uses Int_Add -1 for '+1 initiative', which is one phase earlier.
+    public class VanillaModifiersCfg
+    {
+        public int PhasesPerPoint = 3;
+    }
+
+    // Morale attack delay on the target: BasePhases + max(0, attacker avg(Gunnery,Tactics) - target avg(Guts,Tactics))
+    public class CalledShotCfg
+    {
+        public int BasePhases = 3;
+    }
+
+    // Morale defend bonus for next round: BasePhases + avg(Guts,Tactics)
+    public class VigilanceCfg
+    {
+        public int BasePhases = 3;
+    }
+
+    // Delay on the target of any melee hit that does damage:
+    //   BasePhases + max(0, attacker avg(Piloting,Tactics) - target avg(Guts,Piloting)). 0 disables it.
+    public class MeleeHitCfg
+    {
+        public int BasePhases = 3;
+    }
+
+    // Delay per point of MeleeHitPushBackPhases on a melee hit (vanilla or CBTBE), on top of MeleeHit
+    public class MeleePushBackCfg
+    {
+        public int PhasesPerPoint = 3;
+    }
+
+    // Extra delay for units that spawn after round 1, for the round they arrive in
+    public class ArrivalCfg
+    {
+        public int DelayPhases = 5;
     }
 
     public class IconCfg
@@ -129,6 +164,13 @@ namespace SkillBasedInit
         public ColorCfg Colors = new ColorCfg();
 
         public PilotCfg Pilot = new PilotCfg();
+
+        public VanillaModifiersCfg VanillaModifiers = new VanillaModifiersCfg();
+        public CalledShotCfg CalledShot = new CalledShotCfg();
+        public VigilanceCfg Vigilance = new VigilanceCfg();
+        public MeleeHitCfg MeleeHit = new MeleeHitCfg();
+        public MeleePushBackCfg MeleePushBack = new MeleePushBackCfg();
+        public ArrivalCfg Arrival = new ArrivalCfg();
 
         public UnitCfg Mech = new UnitCfg();
         public UnitCfg Trooper = new UnitCfg();
@@ -235,6 +277,9 @@ namespace SkillBasedInit
         {
             Mod.Log.Info?.Write("=== MOD CONFIG BEGIN ===");
             Mod.Log.Info?.Write($"  DEBUG:{this.Debug} Trace:{this.Trace}");
+            Mod.Log.Info?.Write($"  VanillaModifiers => PhasesPerPoint: {this.VanillaModifiers.PhasesPerPoint}");
+            Mod.Log.Info?.Write($"  CalledShot => BasePhases: {this.CalledShot.BasePhases}  Vigilance => BasePhases: {this.Vigilance.BasePhases}");
+            Mod.Log.Info?.Write($"  MeleeHit => BasePhases: {this.MeleeHit.BasePhases}  MeleePushBack => PhasesPerPoint: {this.MeleePushBack.PhasesPerPoint}  Arrival => DelayPhases: {this.Arrival.DelayPhases}");
 
             Mod.Log.Info?.Write($"  == Pilot Tag Modifiers");
             foreach (KeyValuePair<string, int> kvp in Pilot.PilotTagModifiers)

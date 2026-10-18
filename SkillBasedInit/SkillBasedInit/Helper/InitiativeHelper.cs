@@ -1,4 +1,5 @@
 ﻿using IRBTModUtils.Extension;
+using System.Collections.Generic;
 
 namespace SkillBasedInit.Helper
 {
@@ -19,6 +20,92 @@ namespace SkillBasedInit.Helper
         {
             int phase = (Mod.MaxPhase + 1) - initiative;
             return phase;
+        }
+
+        public static bool IsValidInitiative(int initiative)
+        {
+            return initiative >= Mod.MinPhase && initiative <= Mod.MaxPhase;
+        }
+
+        // Display value for an actor.Initiative, clamped to the valid range. Init of 1 displays as 30, 30 displays as 1.
+        public static string InitiativeToString(int initiative)
+        {
+            if (!IsValidInitiative(initiative))
+            {
+                Mod.Log.Info?.Write($"InitiativeToString - ERROR - Bad initiative of {initiative} detected, clamping for display.");
+                initiative = initiative > Mod.MaxPhase ? Mod.MaxPhase : Mod.MinPhase;
+            }
+            return InitiativeToPhase(initiative).ToString();
+        }
+
+        // Vanilla BaseInitiative points the actor currently carries from gear, abilities, quirks and injuries:
+        //   current value minus the default set in InitStats. Positive means later, as content uses Int_Add -1 for '+1 initiative'.
+        public static int VanillaModifierPoints(AbstractActor actor)
+        {
+            Statistic stat = actor?.StatCollection?.GetStatistic(ModStats.HBS_BASE_INITIATIVE);
+            if (stat == null) return 0;
+
+            return stat.Value<int>() - stat.DefaultValue<int>();
+        }
+
+        public static int VanillaPointsToPhases(int points)
+        {
+            return points * Mod.Config.VanillaModifiers.PhasesPerPoint;
+        }
+
+        // Out of combat there are no stats yet, so mirror vanilla LanceLoadoutSlot: count self-targeted BaseInitiative
+        //   effects. Lance-wide effects are excluded here, they arrive via LanceConfiguratorPanel.lanceInitiativeModifier.
+        public static int ComponentModifierPoints(MechDef mechDef)
+        {
+            if (mechDef?.Inventory == null) return 0;
+
+            List<EffectData> effects = new List<EffectData>();
+            foreach (MechComponentRef componentRef in mechDef.Inventory)
+            {
+                if (componentRef?.Def?.statusEffects != null) effects.AddRange(componentRef.Def.statusEffects);
+            }
+            return SelfEffectPoints(effects);
+        }
+
+        public static int PilotAbilityModifierPoints(Pilot pilot)
+        {
+            if (pilot?.pilotDef?.AbilityDefs == null) return 0;
+
+            List<EffectData> effects = new List<EffectData>();
+            foreach (AbilityDef abilityDef in pilot.pilotDef.AbilityDefs)
+            {
+                if (abilityDef?.EffectData != null) effects.AddRange(abilityDef.EffectData);
+            }
+            return SelfEffectPoints(effects);
+        }
+
+        // GetInitiativeModifierFromEffectData returns the display value (-modValue); invert back to points (+ = later)
+        public static int SelfEffectPoints(IEnumerable<EffectData> effects)
+        {
+            int points = 0;
+            foreach (EffectData effect in effects)
+            {
+                bool isLanceWide = MechStatisticsRules.GetInitiativeModifierFromEffectData(effect, true) != 0;
+                if (isLanceWide) continue;
+
+                points -= MechStatisticsRules.GetInitiativeModifierFromEffectData(effect, false);
+            }
+            return points;
+        }
+
+        // Finds the tonnage bracket for a unit: the smallest key >= tonnage. Tonnage above every key uses the largest key.
+        //   Keys are sorted explicitly, as Dictionary enumeration order isn't guaranteed.
+        public static int TonnageToPhase(Dictionary<int, int> initBaseByTonnage, int tonnage)
+        {
+            if (initBaseByTonnage == null || initBaseByTonnage.Count == 0) return 0;
+
+            List<int> keys = new List<int>(initBaseByTonnage.Keys);
+            keys.Sort();
+            foreach (int key in keys)
+            {
+                if (tonnage <= key) return initBaseByTonnage[key];
+            }
+            return initBaseByTonnage[keys[keys.Count - 1]];
         }
 
         public static void UpdateInitiative(AbstractActor actor)
@@ -76,7 +163,13 @@ namespace SkillBasedInit.Helper
                 $"  miscMod: {miscMod}"
                 );
 
-            // Check for consumable modifiers - these get reset to 0 when we recalculate 
+            // Vanilla and modpack BaseInitiative modifiers (gear, abilities, quirks, injuries), scaled to our phases
+            int vanillaPoints = VanillaModifierPoints(actor);
+            int vanillaMod = VanillaPointsToPhases(vanillaPoints);
+            roundInitiative += vanillaMod;
+            Mod.Log.Info?.Write($"roundInit: {roundInitiative} <=  vanillaMod: {vanillaMod} from vanillaPoints: {vanillaPoints}");
+
+            // Check for consumable modifiers - these get reset to 0 when we recalculate
             int calledShotMod = actor.StatCollection.GetValue<int>(ModStats.STATE_CALLED_SHOT);
             if (calledShotMod != 0)
             {
@@ -84,6 +177,16 @@ namespace SkillBasedInit.Helper
                 roundInitiative += calledShotMod;
                 Mod.Log.Info?.Write($"roundInit: {roundInitiative} <=  calledShotState: {calledShotMod}");
                 actor.StatCollection.Set<int>(ModStats.STATE_CALLED_SHOT, 0);
+            }
+
+            // Actor was pushed back by melee sometime after its turn. Saves from before this stat existed won't have it.
+            int pushBackMod = actor.StatCollection.ContainsStatistic(ModStats.STATE_MELEE_PUSHBACK) ?
+                actor.StatCollection.GetValue<int>(ModStats.STATE_MELEE_PUSHBACK) : 0;
+            if (pushBackMod != 0)
+            {
+                roundInitiative += pushBackMod;
+                Mod.Log.Info?.Write($"roundInit: {roundInitiative} <=  meleePushBackState: {pushBackMod}");
+                actor.StatCollection.Set<int>(ModStats.STATE_MELEE_PUSHBACK, 0);
             }
 
             int vigilanceMod = actor.StatCollection.GetValue<int>(ModStats.STATE_VIGILIANCE);
@@ -122,13 +225,22 @@ namespace SkillBasedInit.Helper
 
             if (actor.StatCollection.GetValue<int>(ModStats.STATE_HESITATION) != 0)
             {
-                // Tactics mod is raw, so reduce hestitation init by raw statics modifier
-                int hestiationReduction = pilot.SBITacticsMod() + 1;
-                int reducedHesitation = actor.StatCollection.GetValue<int>(ModStats.STATE_HESITATION) - hestiationReduction;
-                Mod.Log.Info?.Write($"  hesitationMod: {actor.StatCollection.GetValue<int>(ModStats.STATE_HESITATION)} - tacticsMod: {hestiationReduction} => {reducedHesitation}");
-                if (reducedHesitation < 0) reducedHesitation = 0;
-                roundInitiative += reducedHesitation;
-                actor.StatCollection.Set<int>(ModStats.STATE_HESITATION, reducedHesitation);
+                int carriedHesitation = actor.StatCollection.GetValue<int>(ModStats.STATE_HESITATION);
+                if (ReservedLastRound(actor))
+                {
+                    // Consecutive reserves stack: no decay while the unit keeps reserving
+                    Mod.Log.Info?.Write($"  hesitationMod: {carriedHesitation} carried without decay, unit reserved last round");
+                }
+                else
+                {
+                    // Tactics mod is raw, so reduce hestitation init by raw statics modifier
+                    int hestiationReduction = pilot.SBITacticsMod() + 1;
+                    int reducedHesitation = carriedHesitation - hestiationReduction;
+                    Mod.Log.Info?.Write($"  hesitationMod: {carriedHesitation} - tacticsMod: {hestiationReduction} => {reducedHesitation}");
+                    carriedHesitation = reducedHesitation < 0 ? 0 : reducedHesitation;
+                }
+                roundInitiative += carriedHesitation;
+                actor.StatCollection.Set<int>(ModStats.STATE_HESITATION, carriedHesitation);
             }
 
             // Normalize values
@@ -148,7 +260,83 @@ namespace SkillBasedInit.Helper
             Mod.Log.Info?.Write($"  actor.Initiative: {actor.Initiative} => phase: {newPhase}");
         }
 
-        // Calculate the left and right phase boundaries *as initiative* 
+        // Carried hesitation is capped so it's bounded by the phase range; the final phase is clamped separately
+        public const int MaxHesitation = Mod.MaxPhase - Mod.MinPhase;
+
+        // Adds a reserve's hesitation to the carried total and records the round, so the next round knows not to decay it
+        public static void AddHesitation(AbstractActor actor, int penalty, int currentRound)
+        {
+            StatCollection stats = actor.StatCollection;
+            // Actors loaded from saves made before these stats existed won't have them
+            if (!stats.ContainsStatistic(ModStats.STATE_LAST_RESERVE_ROUND)) stats.AddStatistic<int>(ModStats.STATE_LAST_RESERVE_ROUND, 0);
+
+            int carried = stats.GetValue<int>(ModStats.STATE_HESITATION) + penalty;
+            if (carried > MaxHesitation) carried = MaxHesitation;
+
+            stats.Set<int>(ModStats.STATE_HESITATION, carried);
+            stats.Set<int>(ModStats.STATE_LAST_RESERVE_ROUND, currentRound);
+        }
+
+        // OnNewRound runs after TurnDirector.CurrentRound is advanced, so 'last round' is CurrentRound - 1
+        public static bool ReservedLastRound(AbstractActor actor)
+        {
+            if (!actor.StatCollection.ContainsStatistic(ModStats.STATE_LAST_RESERVE_ROUND)) return false;
+
+            int lastReserveRound = actor.StatCollection.GetValue<int>(ModStats.STATE_LAST_RESERVE_ROUND);
+            int currentRound = actor.Combat.TurnDirector.CurrentRound;
+            return lastReserveRound > 0 && lastReserveRound == currentRound - 1;
+        }
+
+        // Initiative for a unit that joins combat mid-mission: a full roll, plus the arrival delay when requested.
+        //   Never earlier than the phase in progress, so the unit still acts in the round it arrives.
+        public static int ArrivalInitiative(AbstractActor actor, bool applyDelay)
+        {
+            UpdateInitiative(actor);
+
+            int delay = applyDelay ? Mod.Config.Arrival.DelayPhases : 0;
+            int arrivalInit = actor.Initiative + delay;
+
+            int currentPhase = actor.Combat.TurnDirector.CurrentPhase;
+            if (arrivalInit < currentPhase) arrivalInit = currentPhase;
+            if (arrivalInit > Mod.MaxPhase) arrivalInit = Mod.MaxPhase;
+
+            Mod.Log.Info?.Write($"Arrival for actor: {actor.DistinctId()} => rolled: {actor.Initiative} + delay: {delay}, currentPhase: {currentPhase} => {arrivalInit}");
+            actor.Initiative = arrivalInit;
+            return delay;
+        }
+
+        // A delay can only land this round if the unit hasn't started activating. A unit knocked down during its own
+        //   activation (e.g. a failed DFA) has begun but not finished, so a delay applied 'now' would be lost.
+        //   A unit already in the last phase can't be moved any later.
+        public static bool DelayMustWaitForNextRound(AbstractActor actor)
+        {
+            return actor.HasActivatedThisRound || actor.HasBegunActivation || actor.Initiative >= Mod.MaxPhase;
+        }
+
+        // Maps an actor.Initiative (phase 1..30) onto one of the phase track's slots (normally 5): slot 0 is 'P' (past),
+        //   slots 1-3 are the phases around the current one, the last slot is 'F' (future). Always returns a valid index.
+        //   Before combat is interleaved, everyone shares the last slot, matching vanilla once rounds start.
+        public static int PhaseTrackSlot(int phase, int currentPhase, bool isInterleaved, int slotCount)
+        {
+            int lastSlot = slotCount - 1;
+            if (slotCount < 5 || !isInterleaved) return lastSlot < 0 ? 0 : lastSlot;
+
+            // Incoming phase value is actor.Initiative; convert to the displayed value the bounds are in
+            int phaseAsInit = (Mod.MaxPhase + 1) - phase;
+            if (phaseAsInit > Mod.MaxPhase) phaseAsInit = Mod.MaxPhase;
+            else if (phaseAsInit < Mod.MinPhase) phaseAsInit = Mod.MinPhase;
+
+            int[] bounds = CalcPhaseIconBounds(currentPhase);
+            if (phaseAsInit > bounds[1]) return 0;
+            if (phaseAsInit < bounds[3]) return 4;
+            for (int i = 1; i <= 3; i++)
+            {
+                if (bounds[i] == phaseAsInit) return i;
+            }
+            return 2;
+        }
+
+        // Calculate the left and right phase boundaries *as initiative*
         //   Will calculate 
         // 30, 29, 28, 27, 26 (red 30) -> phase 1
         // 30, 29, 28, 27, 26 (red 29) -> phase 2

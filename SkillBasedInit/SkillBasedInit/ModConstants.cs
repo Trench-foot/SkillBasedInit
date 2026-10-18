@@ -14,6 +14,7 @@ namespace SkillBasedInit
     {
         // Base game values
         public const string HBS_BONUS_HEALTH = "BonusHeath";
+        public const string HBS_BASE_INITIATIVE = "BaseInitiative";
 
         // Assumed to be provided by status effects, not consumed
         public const string MOD_INJURY = "SBI_MOD_INJURY";
@@ -23,12 +24,14 @@ namespace SkillBasedInit
         public const string MOD_CALLED_SHOT_ATTACKER = "SBI_MOD_CALLED_SHOT_ATTACKER"; // modifies called shot penalty for the defender
         public const string MOD_CALLED_SHOT_TARGET = "SBI_MOD_CALLED_SHOT_TARGET"; // modifies called shot penalty for the defender
         public const string STATE_CALLED_SHOT = "SBI_STATE_CALLED_SHOT"; //  current called shot penalty
+        public const string STATE_MELEE_PUSHBACK = "SBI_STATE_MELEE_PUSHBACK"; // melee push-back penalty carried to next round
 
         public const string MOD_VIGILANCE = "SBI_MOD_VIGILANCE"; // modifies generated vigilance
         public const string STATE_VIGILIANCE = "SBI_STATE_VIGILANCE"; // current vigilant bonus
 
         public const string MOD_HESITATION = "SBI_MOD_HESITATION"; // modifies generated hesitation
         public const string STATE_HESITATION = "SBI_STATE_HESITATION"; // current hesitation penalty
+        public const string STATE_LAST_RESERVE_ROUND = "SBI_STATE_LAST_RESERVE_ROUND"; // round the unit last reserved in, 0 = never
 
         // Calculated by SBI - do not modify directly!
         public const string ROUND_INIT = "SBI_ROUND_INIT";

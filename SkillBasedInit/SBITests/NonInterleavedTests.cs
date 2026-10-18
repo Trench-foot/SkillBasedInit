@@ -4,7 +4,7 @@ using SkillBasedInit.Helper;
 namespace SBITests
 {
     [TestClass]
-    public class NonInterleavedTests
+    public class NonInterleavedTests : SBITestBase
     {
         //[TestMethod]
         public void TestNonInterleaved()

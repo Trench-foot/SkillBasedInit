@@ -57,6 +57,10 @@ namespace SkillBasedInit
         }
     }
 
+    // Vanilla SetTrackerPhase does PhaseIcons[phase - 1] on a 5 slot track, so any phase above 5 throws. That happens
+    //   before combat is interleaved too: CustomUnits spawns assault mechs at Phase.PhaseAssault, which is 30 here.
+    //   An exception in CombatHUD.Init leaves the HUD half built and CombatHUDPhaseTrack.Update throwing every frame,
+    //   so never fall through to vanilla - always place the tracker ourselves.
     [HarmonyPatch(typeof(CombatHUDPhaseTrack), "SetTrackerPhase")]
     [HarmonyPatch(new Type[] { typeof(CombatHUDIconTracker), typeof(int) })]
     public static class CombatHUDPhaseTrack_SetTrackerPhase
@@ -64,71 +68,49 @@ namespace SkillBasedInit
         public static void Prefix(ref bool __runOriginal, CombatHUDPhaseTrack __instance, CombatHUDIconTracker tracker, int phase, int ___currentPhase, List<CombatHUDPhaseIcons> ___PhaseIcons)
         {
             if (!__runOriginal) return;
+            __runOriginal = false;
 
             Mod.Log.Trace?.Write($"CHUDPT:STP - entered at phase: {phase}.");
 
-            if (__instance == null || tracker == null || ___PhaseIcons == null)
+            if (tracker == null || ___PhaseIcons == null || ___PhaseIcons.Count == 0)
             {
-                Mod.Log.Warn?.Write("Invalid state detect, __instance, tracker, or ___PhaseIcons were null. This should not happen!");
-                return;
-            }
-            if (___PhaseIcons.Count < 5)
-            {
-                Mod.Log.Warn?.Write("___PhaseIcons has less than 5 selections, this should not happen!");
-                return;
-            }
-            if (!SharedState.Combat.TurnDirector.IsInterleaved)
-            {
-                Mod.Log.Warn?.Write("Asked to SetTrackerPhase, but combat is not interleaved - this should not happen!");
+                Mod.Log.Warn?.Write("Invalid state detected, tracker or ___PhaseIcons were null or empty. This should not happen!");
                 return;
             }
 
-            // Incoming phase value is Actor.Initiative, need to convert it figure out what pahse is represents
-            int phaseAsInit = (Mod.MaxPhase + 1) - phase;
-            if (phaseAsInit > Mod.MaxPhase)
-            {
-                phaseAsInit = Mod.MaxPhase;
-                Mod.Log.Info?.Write($"Invalid phase {phase} supplied, greater than MaxPhase: {Mod.MaxPhase}. Normalizing.");
-            }
-            else if (phaseAsInit < Mod.MinPhase)
-            {
-                phaseAsInit = Mod.MinPhase;
-                Mod.Log.Info?.Write($"Invalid phase {phase} supplied, less than MinPhase: {Mod.MinPhase}. Normalizing.");
-            }
-            
-            int[] bounds = InitiativeHelper.CalcPhaseIconBounds(___currentPhase);
-            if (bounds == null || bounds.Length < 5)
-            {
-                Mod.Log.Warn?.Write($"Calculated bounds are null or less than 5 for phase {phase}, this should not happen!");
-                return;
-            }
-            Mod.Log.Trace?.Write($"Phase {phase} is init {phaseAsInit} within currentPhase: {___currentPhase} with bounds: {bounds[0]}-{bounds[4]}");
-            
-            if (phaseAsInit > bounds[1])
-            {
-                Mod.Log.Trace?.Write($"  -- Phase icon is higher than {bounds[1]}, setting to P phase.");
-                ___PhaseIcons[0].AddIconTrackerToPhase(tracker);
-            }
-            else if (phaseAsInit < bounds[3])
-            {
-                Mod.Log.Trace?.Write($"  -- Phase icon is higher than {bounds[3]}, setting to F phase.");
-                ___PhaseIcons[4].AddIconTrackerToPhase(tracker);
-            }
-            else
-            {
-                for (int i = 0; i < 5; i++)
-                {
-                    if (bounds[i] == phaseAsInit)
-                    {
-                        Mod.Log.Trace?.Write($"  -- Setting phase icon for phaseAsInit: {phaseAsInit} / bounds: {bounds[i]} at index {i}");
-                        ___PhaseIcons[i].AddIconTrackerToPhase(tracker);
-                    }
-                }
-            }
+            bool isInterleaved = SharedState.Combat?.TurnDirector?.IsInterleaved ?? false;
+            int slot = InitiativeHelper.PhaseTrackSlot(phase, ___currentPhase, isInterleaved, ___PhaseIcons.Count);
+            Mod.Log.Trace?.Write($"  -- phase: {phase} currentPhase: {___currentPhase} interleaved: {isInterleaved} => slot: {slot}");
 
-            __runOriginal = false;
+            ___PhaseIcons[slot].AddIconTrackerToPhase(tracker);
+            // Don't record the phase. Vanilla's RefreshAllIconTrackers only re-places a tracker whose phase changed, but our
+            //   slots slide with the current phase, so a unit whose phase didn't change still has to move. Leaving it at -1
+            //   re-places every tracker on every refresh, as upstream did.
+            tracker.CurrentlyDisplayedPhase = -1;
         }
     }
 
+    // Same unchecked turnEventIcons[phase - 1] indexing. Turn events shown on the phase track use the current phase.
+    [HarmonyPatch(typeof(CombatHUDPhaseTrack), "SetTrackerTurnEventPhase")]
+    [HarmonyPatch(new Type[] { typeof(CombatHUDIconTracker), typeof(int) })]
+    public static class CombatHUDPhaseTrack_SetTrackerTurnEventPhase
+    {
+        public static void Prefix(ref bool __runOriginal, CombatHUDIconTracker tracker, int phase, int ___currentPhase, CombatHUDPhaseIcons[] ___turnEventIcons)
+        {
+            if (!__runOriginal) return;
+            __runOriginal = false;
+
+            if (tracker == null || ___turnEventIcons == null || ___turnEventIcons.Length == 0)
+            {
+                Mod.Log.Warn?.Write("Invalid state detected, tracker or ___turnEventIcons were null or empty. This should not happen!");
+                return;
+            }
+
+            bool isInterleaved = SharedState.Combat?.TurnDirector?.IsInterleaved ?? false;
+            int slot = InitiativeHelper.PhaseTrackSlot(phase, ___currentPhase, isInterleaved, ___turnEventIcons.Length);
+            ___turnEventIcons[slot].AddTurnEventTrackerToPhase(tracker);
+            tracker.CurrentlyDisplayedPhase = phase;
+        }
+    }
 
 }
