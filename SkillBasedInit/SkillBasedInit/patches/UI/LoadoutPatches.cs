@@ -34,32 +34,17 @@ namespace SkillBasedInit.Patches
             {
                 List<string> details = new List<string>();
 
-                // Static initiative from tonnage
-                int tonnageMod = ___selectedMech.GetBaseInitByTonnage();
-                details.Add(new Text(Mod.LocalizedText.MechBay[ModText.LT_MB_TONNAGE], new object[] { tonnageMod }).ToString());
-
-                // Type modifier
-                int typeMod = ___selectedMech.GetTypeModifier();
-                string typeModColor = typeMod >= 0 ? "00FF00" : "FF0000";
-                details.Add(new Text(Mod.LocalizedText.MechBay[ModText.LT_MB_UNIT_TYPE], new object[] { typeModColor, typeMod }).ToString());
-
-                // Any modifiers that come from the chassis/mech/vehicle defs
-                //int componentsMod = UnitHelper.GetNormalizedComponentModifier(___selectedMech);
-                //string compsColor = componentsMod >= 0 ? "00FF00" : "FF0000";
-                // details.Add(new Text(Mod.LocalizedText.MechBay[ModText.LT_MB_COMPONENTS], new object[] { compsColor, componentsMod }).ToString());
-
-                // Modifier from the engine
-                // int engineMod = UnitHelper.GetEngineModifier(___selectedMech);
-                //string engineColor = engineMod >= 0 ? "00FF00" : "FF0000";
-                // details.Add(new Text(Mod.LocalizedText.MechBay[ModText.LT_MB_ENGINES], new object[] { engineColor, engineMod }).ToString());
+                // No pilot or lance here, so only the unit's own modifiers apply
+                int staticInit = LoadoutHelper.ClampInitiative(LoadoutHelper.StaticInitiative(___selectedMech, null, 0, details));
+                int staticPhase = InitiativeHelper.InitiativeToPhase(staticInit);
 
                 // --- Badge ---
+                // Upstream showed the raw init value here, which didn't match the number the combat HUD shows
                 ___initiativeObj.SetActive(true);
-                ___initiativeText.SetText($"{tonnageMod + typeMod}");
+                ___initiativeText.SetText($"{staticPhase}");
 
                 // --- Tooltip ---
-                int maxInit = Math.Max(tonnageMod + typeMod, Mod.MinPhase);
-                details.Add(new Text(Mod.LocalizedText.MechBay[ModText.LT_MB_EXPECTED_NO_PILOT], new object[] { maxInit }).ToString());
+                details.Add(new Text(Mod.LocalizedText.MechBay[ModText.LT_MB_EXPECTED_NO_PILOT], new object[] { staticPhase }).ToString());
 
                 string tooltipTitle = $"{___selectedMech.Name}";
                 string tooltipText = String.Join("\n", details.ToArray());
@@ -97,49 +82,20 @@ namespace SkillBasedInit.Patches
             {
                 Mod.Log.Debug?.Write($"Building init data for mechdef: {__instance.SelectedMech.name} with pilot: {__instance.SelectedPilot.name}");
 
-                int initValue = 0;
-
-                // --- MECH ---
                 MechDef selectedMechDef = __instance.SelectedMech.MechDef;
+                Pilot selectedPilot = __instance.SelectedPilot.Pilot;
                 List<string> details = new List<string>();
 
-                // Static initiative from tonnage
-                int tonnageMod = __instance.SelectedMech.MechDef.GetBaseInitByTonnage();
-                initValue += tonnageMod;
-                details.Add(new Text(Mod.LocalizedText.MechBay[ModText.LT_MB_TONNAGE], new object[] { tonnageMod }).ToString());
+                // Upstream added lanceInitiativeModifier with the wrong sign; LoadoutHelper inverts and scales it
+                int lanceInitiativeModifier = ___LC != null ? ___LC.lanceInitiativeModifier : 0;
+                int initValue = LoadoutHelper.StaticInitiative(selectedMechDef, selectedPilot, lanceInitiativeModifier, details);
 
-                // Check tags
-                int typeMod = __instance.SelectedMech.MechDef.GetTypeModifier();
-                initValue += typeMod;
-                string typeModColor = typeMod >= 0 ? "00FF00" : "FF0000";
-                details.Add(new Text(Mod.LocalizedText.MechBay[ModText.LT_MB_UNIT_TYPE], new object[] { typeModColor, typeMod }).ToString());
-
-                // --- PILOT ---
-                Pilot selectedPilot = __instance.SelectedPilot.Pilot;
-                // TODO: Iterate abilities, look for SBI stats, and apply that logic to the tooltip display
-
-                int tacticsMod = selectedPilot.SBITacticsMod();
-                details.Add(new Text(Mod.LocalizedText.MechBay[ModText.LT_MB_TACTICS], new object[] { tacticsMod }).ToString());
-                initValue -= tacticsMod;
-
-                int pilotTagsMod = PilotHelper.GetTagsModifier(selectedPilot);
-                details.AddRange(PilotHelper.GetTagsModifierDetails(selectedPilot));
-                initValue += pilotTagsMod;
-
-                UnitCfg unitCfg = __instance.SelectedMech.MechDef.GetUnitConfig();
+                UnitCfg unitCfg = selectedMechDef.GetUnitConfig();
                 int[] randomnessBounds = selectedPilot.RandomnessBounds(unitCfg.RandomnessMin, unitCfg.RandomnessMax);
 
-                // --- LANCE ---
-                if (___LC != null)
-                {
-                    initValue += ___LC.lanceInitiativeModifier;
-                    string lanceColor = ___LC.lanceInitiativeModifier >= 0 ? "00FF00" : "FF0000";
-                    details.Add(new Text(Mod.LocalizedText.MechBay[ModText.LT_MB_LANCE], new object[] { lanceColor, ___LC.lanceInitiativeModifier }).ToString());
-                }
-
                 // --- Tooltip ---
-                int maxInit = Math.Max(initValue + randomnessBounds[0], Mod.MinPhase);
-                int minInit = Math.Max(initValue + randomnessBounds[1], Mod.MinPhase);
+                int maxInit = LoadoutHelper.ClampInitiative(initValue + randomnessBounds[0]);
+                int minInit = LoadoutHelper.ClampInitiative(initValue + randomnessBounds[1]);
                 int avgMod = (int)Math.Ceiling((maxInit - minInit) / 2f);
                 int avgInit = maxInit - avgMod;
 
@@ -153,7 +109,9 @@ namespace SkillBasedInit.Patches
                 ___initiativeText.color = Color.black;
                 ___initiativeColor.SetUIColor(UIColor.White);
 
-                details.Add(new Text(Mod.LocalizedText.MechBay[ModText.LT_MB_TOTAL], new object[] { initValue }).ToString());
+                // Total before randomness, shown as the HUD would show it
+                int totalPhase = InitiativeHelper.InitiativeToPhase(LoadoutHelper.ClampInitiative(initValue));
+                details.Add(new Text(Mod.LocalizedText.MechBay[ModText.LT_MB_TOTAL], new object[] { totalPhase }).ToString());
                 details.Add(new Text(Mod.LocalizedText.MechBay[ModText.LT_MB_RANDOM], new object[] { randomnessBounds[0], randomnessBounds[1] }).ToString());
                 details.Add(new Text(Mod.LocalizedText.MechBay[ModText.LT_MB_EXPECTED], new object[] { minPhase, maxPhase }).ToString());
 

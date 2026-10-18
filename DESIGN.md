@@ -106,9 +106,17 @@ Per-unit-class changes:
 
 ## UI
 
-- Mech Bay, lance screen and the status-panel tooltip each gain a "Gear/abilities" line: the vanilla delta × `PhasesPerPoint`.
-- Lance-wide gear uses vanilla's own effect-target check, so it isn't counted twice.
-- One shared function computes the static part, so displayed and combat values can't drift apart.
+- Each screen gains lines for the vanilla modifiers, × `PhasesPerPoint`:
+  - Status-panel tooltip (combat): "gear/abilities", read from the actor's `BaseInitiative` delta.
+  - Mech Bay: "gear".
+  - Lance screen: "gear" and "pilot abilities". These are self-targeted effects only, using vanilla's own effect-target check. Lance-wide effects come from `lanceInitiativeModifier`, so they aren't counted twice.
+- `LoadoutHelper.StaticInitiative` computes the Mech Bay and lance values, so the two screens can't disagree.
+- **Display convention.** Every signed modifier line reads like initiative (+ = acts earlier, green). Unsigned red numbers are delays. Badges and totals use the same number the combat HUD shows (`31 − phase`).
+- **Upstream UI bugs fixed in step 2:**
+  - The Mech Bay badge and its "expected phase" showed the raw phase index, so a 50 t mech read "17" there but "14" in combat.
+  - The lance screen added `lanceInitiativeModifier` with the wrong sign, so lance-wide initiative gear showed as a delay. It also wasn't scaled.
+  - The unit-type line was coloured and signed as a bonus when it's a delay (vehicles showed a green "+2").
+  - The lance "TOTAL" line showed the raw index.
 
 ## Naming
 

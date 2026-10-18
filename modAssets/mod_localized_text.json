@@ -8,7 +8,8 @@
 	"MechBay" : {
 		"MECHBAY_TONNAGE" : "<b>BASE</b>: {0} (<i>from tonnage</i>)",
 		"MECHBAY_UNIT_TYPE" : "<space=2em><color=#{0}>{1:+0;-#} unit type</color>",
-		"MECHBAY_COMPONENTS" : "<space=2em><color=#{0}>{1:+0;-#} components</color>",
+		"MECHBAY_COMPONENTS" : "<space=2em><color=#{0}>{1:+0;-#} gear</color>",
+		"MECHBAY_PILOT_ABILITIES" : "<space=2em><color=#{0}>{1:+0;-#} pilot abilities</color>",
 		"MECHBAY_LANCE" : "<space=2em><color=#{0}>{1:+0;-#} lance</color>",
 		"MECHBAY_TACTICS" : "<space=2em>{0:+0;-#} tactics",
 		"MECHBAY_TOTAL" : "<b>TOTAL</b>: {0}",
@@ -21,6 +22,7 @@
 		"TOOLTIP_MECH_TONNAGE" : "CHASSIS => tonnage: {0}",
 		"TOOLTIP_UNIT_TYPE" : "<color=#{0}>{1:+0;-#} unit type</color>",
 		"TOOLTIP_COMPONENTS" : "<color=#{0}>{1:+0;-#} components</color>",
+		"TOOLTIP_VANILLA_MODS" : "<color=#{0}>{1:+0;-#} gear/abilities</color>",
 		"TOOLTIP_CRIPPLED" : "<color=#FF0000>{0} crippled</color>",
 		"TOOLTIP_PRONE" : "<color=#FF0000>{0} prone</color>",
 		"TOOLTIP_SHUTDOWN" : "<color=#FF0000>{0} shutdown</color>",

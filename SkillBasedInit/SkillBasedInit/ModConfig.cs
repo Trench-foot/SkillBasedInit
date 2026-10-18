@@ -66,6 +66,13 @@ namespace SkillBasedInit
         };
     }
 
+    // Converts vanilla/modpack BaseInitiative modifiers (gear, abilities, quirks, injuries) into SBI phases.
+    //   Vanilla content uses Int_Add -1 for '+1 initiative', which is one phase earlier.
+    public class VanillaModifiersCfg
+    {
+        public int PhasesPerPoint = 3;
+    }
+
     public class IconCfg
     {
         public string Stopwatch = "sbi_stopwatch";
@@ -129,6 +136,8 @@ namespace SkillBasedInit
         public ColorCfg Colors = new ColorCfg();
 
         public PilotCfg Pilot = new PilotCfg();
+
+        public VanillaModifiersCfg VanillaModifiers = new VanillaModifiersCfg();
 
         public UnitCfg Mech = new UnitCfg();
         public UnitCfg Trooper = new UnitCfg();
@@ -235,6 +244,7 @@ namespace SkillBasedInit
         {
             Mod.Log.Info?.Write("=== MOD CONFIG BEGIN ===");
             Mod.Log.Info?.Write($"  DEBUG:{this.Debug} Trace:{this.Trace}");
+            Mod.Log.Info?.Write($"  VanillaModifiers => PhasesPerPoint: {this.VanillaModifiers.PhasesPerPoint}");
 
             Mod.Log.Info?.Write($"  == Pilot Tag Modifiers");
             foreach (KeyValuePair<string, int> kvp in Pilot.PilotTagModifiers)

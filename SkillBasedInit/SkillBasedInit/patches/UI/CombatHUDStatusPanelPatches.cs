@@ -56,8 +56,10 @@ namespace SkillBasedInit.patches
             // Type modifier
             int typeMod = actor.StatCollection.GetValue<int>(ModStats.STATE_UNIT_TYPE_INIT_MOD);
             initiativeBase += typeMod;
-            string typeModColor = typeMod >= 0 ? "00FF00" : "FF0000";
-            chassisDetails.Add(new Text(Mod.LocalizedText.Tooltip[ModText.LT_TT_UNIT_TYPE], new object[] { typeModColor, typeMod }).ToString());
+            // typeMod is an init delta (+ = later); invert so the display reads like initiative (+ = earlier)
+            int typeModDisplay = typeMod * -1;
+            string typeModColor = typeModDisplay >= 0 ? "00FF00" : "FF0000";
+            chassisDetails.Add(new Text(Mod.LocalizedText.Tooltip[ModText.LT_TT_UNIT_TYPE], new object[] { typeModColor, typeModDisplay }).ToString());
 
             if (actor.StatCollection.GetValue<int>(ModStats.MOD_MISC) != 0)
             {
@@ -67,6 +69,17 @@ namespace SkillBasedInit.patches
                 string miscModColor = miscMod >= 0 ? "00FF00" : "FF0000";
                 chassisDetails.Add(new Text(Mod.LocalizedText.Tooltip[ModText.LT_TT_COMPONENTS], new object[] { miscModColor, miscMod }).ToString());
             }
+
+            // Vanilla and modpack BaseInitiative modifiers, scaled to our phases
+            int vanillaMod = InitiativeHelper.VanillaPointsToPhases(InitiativeHelper.VanillaModifierPoints(actor));
+            if (vanillaMod != 0)
+            {
+                initiativeBase += vanillaMod;
+                int vanillaModDisplay = vanillaMod * -1;
+                string vanillaModColor = vanillaModDisplay >= 0 ? "00FF00" : "FF0000";
+                chassisDetails.Add(new Text(Mod.LocalizedText.Tooltip[ModText.LT_TT_VANILLA_MODS], new object[] { vanillaModColor, vanillaModDisplay }).ToString());
+            }
+            Mod.Log.Debug?.Write($"  vanillaMod: {vanillaMod}");
 
             int proneMod = actor.ProneInitMod();
             if (proneMod != 0)

@@ -38,6 +38,61 @@ namespace SkillBasedInit.Helper
             return InitiativeToPhase(initiative).ToString();
         }
 
+        // Vanilla BaseInitiative points the actor currently carries from gear, abilities, quirks and injuries:
+        //   current value minus the default set in InitStats. Positive means later, as content uses Int_Add -1 for '+1 initiative'.
+        public static int VanillaModifierPoints(AbstractActor actor)
+        {
+            Statistic stat = actor?.StatCollection?.GetStatistic(ModStats.HBS_BASE_INITIATIVE);
+            if (stat == null) return 0;
+
+            return stat.Value<int>() - stat.DefaultValue<int>();
+        }
+
+        public static int VanillaPointsToPhases(int points)
+        {
+            return points * Mod.Config.VanillaModifiers.PhasesPerPoint;
+        }
+
+        // Out of combat there are no stats yet, so mirror vanilla LanceLoadoutSlot: count self-targeted BaseInitiative
+        //   effects. Lance-wide effects are excluded here, they arrive via LanceConfiguratorPanel.lanceInitiativeModifier.
+        public static int ComponentModifierPoints(MechDef mechDef)
+        {
+            if (mechDef?.Inventory == null) return 0;
+
+            List<EffectData> effects = new List<EffectData>();
+            foreach (MechComponentRef componentRef in mechDef.Inventory)
+            {
+                if (componentRef?.Def?.statusEffects != null) effects.AddRange(componentRef.Def.statusEffects);
+            }
+            return SelfEffectPoints(effects);
+        }
+
+        public static int PilotAbilityModifierPoints(Pilot pilot)
+        {
+            if (pilot?.pilotDef?.AbilityDefs == null) return 0;
+
+            List<EffectData> effects = new List<EffectData>();
+            foreach (AbilityDef abilityDef in pilot.pilotDef.AbilityDefs)
+            {
+                if (abilityDef?.EffectData != null) effects.AddRange(abilityDef.EffectData);
+            }
+            return SelfEffectPoints(effects);
+        }
+
+        // GetInitiativeModifierFromEffectData returns the display value (-modValue); invert back to points (+ = later)
+        public static int SelfEffectPoints(IEnumerable<EffectData> effects)
+        {
+            int points = 0;
+            foreach (EffectData effect in effects)
+            {
+                bool isLanceWide = MechStatisticsRules.GetInitiativeModifierFromEffectData(effect, true) != 0;
+                if (isLanceWide) continue;
+
+                points -= MechStatisticsRules.GetInitiativeModifierFromEffectData(effect, false);
+            }
+            return points;
+        }
+
         // Finds the tonnage bracket for a unit: the smallest key >= tonnage. Tonnage above every key uses the largest key.
         //   Keys are sorted explicitly, as Dictionary enumeration order isn't guaranteed.
         public static int TonnageToPhase(Dictionary<int, int> initBaseByTonnage, int tonnage)
@@ -108,7 +163,13 @@ namespace SkillBasedInit.Helper
                 $"  miscMod: {miscMod}"
                 );
 
-            // Check for consumable modifiers - these get reset to 0 when we recalculate 
+            // Vanilla and modpack BaseInitiative modifiers (gear, abilities, quirks, injuries), scaled to our phases
+            int vanillaPoints = VanillaModifierPoints(actor);
+            int vanillaMod = VanillaPointsToPhases(vanillaPoints);
+            roundInitiative += vanillaMod;
+            Mod.Log.Info?.Write($"roundInit: {roundInitiative} <=  vanillaMod: {vanillaMod} from vanillaPoints: {vanillaPoints}");
+
+            // Check for consumable modifiers - these get reset to 0 when we recalculate
             int calledShotMod = actor.StatCollection.GetValue<int>(ModStats.STATE_CALLED_SHOT);
             if (calledShotMod != 0)
             {

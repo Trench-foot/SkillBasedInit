@@ -16,6 +16,8 @@ namespace SkillBasedInit
         public const string LT_MB_TONNAGE = "MECHBAY_TONNAGE";
         public const string LT_MB_UNIT_TYPE = "MECHBAY_UNIT_TYPE";
         public const string LT_MB_LANCE = "MECHBAY_LANCE";
+        public const string LT_MB_COMPONENTS = "MECHBAY_COMPONENTS";
+        public const string LT_MB_PILOT_ABILITIES = "MECHBAY_PILOT_ABILITIES";
         public const string LT_MB_TACTICS = "MECHBAY_TACTICS";
         public const string LT_MB_TOTAL = "MECHBAY_TOTAL";
         public const string LT_MB_RANDOM = "MECHBAY_RANDOM";
@@ -27,6 +29,7 @@ namespace SkillBasedInit
         public const string LT_TT_MECH_TONNAGE = "TOOLTIP_MECH_TONNAGE";
         public const string LT_TT_UNIT_TYPE = "TOOLTIP_UNIT_TYPE";
         public const string LT_TT_COMPONENTS = "TOOLTIP_COMPONENTS";
+        public const string LT_TT_VANILLA_MODS = "TOOLTIP_VANILLA_MODS";
         public const string LT_TT_CRIPPLED = "TOOLTIP_CRIPPLED";
         public const string LT_TT_PRONE = "TOOLTIP_PRONE";
         public const string LT_TT_SHUTDOWN = "TOOLTIP_SHUTDOWN";
@@ -56,6 +59,8 @@ namespace SkillBasedInit
             { LT_MB_TONNAGE, "<b>BASE</b>: {0} (<i>from tonnage</i>)" },
             { LT_MB_UNIT_TYPE, "<space=2em><color=#{0}>{1:+0;-#} unit type</color>" },
             { LT_MB_LANCE, "<space=2em><color=#{0}>{1:+0;-#} lance</color>" },
+            { LT_MB_COMPONENTS, "<space=2em><color=#{0}>{1:+0;-#} gear</color>" },
+            { LT_MB_PILOT_ABILITIES, "<space=2em><color=#{0}>{1:+0;-#} pilot abilities</color>" },
             { LT_MB_TACTICS, "<space=2em>{0:+0;-#} tactics" },
             { LT_MB_TOTAL, "<b>TOTAL</b>: {0}" },
             { LT_MB_RANDOM, "<space=2em><color=#FF0000>{0} to {1} random</color> (<i>reduced by piloting</i>)" },
@@ -70,6 +75,7 @@ namespace SkillBasedInit
             { LT_TT_MECH_TONNAGE, "CHASSIS => tonnage: {0}" },
             { LT_TT_UNIT_TYPE, "<color=#{0}>{1:+0;-#} unit type</color>" },
             { LT_TT_COMPONENTS, "<color=#{0}>{1:+0;-#} components</color>" },
+            { LT_TT_VANILLA_MODS, "<color=#{0}>{1:+0;-#} gear/abilities</color>" },
             { LT_TT_CRIPPLED, "<color=#FF0000>{0} crippled</color>" },
             { LT_TT_PRONE, "<color=#FF0000>{0} prone</color>" },
             { LT_TT_SHUTDOWN, "<color=#FF0000>{0} shutdown</color>" },

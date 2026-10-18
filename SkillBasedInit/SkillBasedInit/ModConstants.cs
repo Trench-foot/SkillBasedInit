@@ -14,6 +14,7 @@ namespace SkillBasedInit
     {
         // Base game values
         public const string HBS_BONUS_HEALTH = "BonusHeath";
+        public const string HBS_BASE_INITIATIVE = "BaseInitiative";
 
         // Assumed to be provided by status effects, not consumed
         public const string MOD_INJURY = "SBI_MOD_INJURY";
