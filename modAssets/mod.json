@@ -12,7 +12,7 @@
     "ConflictsWith" : [ "SkillBasedInit", "ExpandedInitiative", "Better Initiative", "The Engine Initiative" ],
     "Manifest": [ { "Type": "SVGAsset", "Path": "icons/"} ],
     "Settings": {
-        "Debug" : true,
+        "Debug" : false,
         "Trace" : false,
         
 		"Icons" : {

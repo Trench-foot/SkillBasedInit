@@ -195,7 +195,7 @@ Per-unit-class changes:
   - `ConflictsWith`: SkillBasedInit, ExpandedInitiative, Better Initiative, The Engine Initiative.
 - **Release builds assemble `dist\BTX_SkillBasedInit`** (DLL, `mod.json`, `mod_localized_text.json`, icons). `dist/` is gitignored.
   - Upstream's post-build copy into RogueTech's `Core\SkillBasedInit` was removed. The build never writes into the game folder or another modpack.
-- `mod.json` still ships `Debug: true`, for the in-game test pass. Set it to `false` for release.
+- `mod.json` ships `Debug: false`. It was `true` for the in-game test pass; turn it back on when diagnosing a problem.
 
 ## Implementation order
 
