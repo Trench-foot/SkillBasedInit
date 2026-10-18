@@ -4,6 +4,9 @@
 		"FLOATIE_CALLED_SHOT_NOW" : "CALLED SHOT! -{0} INIT",
 		"FLOATIE_CALLED_SHOT_LATER" : "CALLED SHOT! -{0} INIT NEXT ROUND",
 		"FLOATIE_VIGILANCE" : "VIGILANCE! +{0} INIT NEXT ROUND!",
+		"FLOATIE_PUSHBACK_NOW" : "PUSHED BACK! -{0} INIT",
+		"FLOATIE_PUSHBACK_LATER" : "PUSHED BACK! -{0} INIT NEXT ROUND",
+		"FLOATIE_ARRIVAL" : "ARRIVING! -{0} INIT",
 	},
 	"MechBay" : {
 		"MECHBAY_TONNAGE" : "<b>BASE</b>: {0} (<i>from tonnage</i>)",
@@ -32,6 +35,7 @@
 		"TOOLTIP_INJURY" : "<color=#{0}>{1:+0;-#} injury</color>",	
 		"TOOLTIP_HESITATION" : "<color=#FF0000>{0} hesitation</color>",
 		"TOOLTIP_CALLED_SHOT" : "<color=#FF0000>{0} called shot</color>",
+		"TOOLTIP_PUSHBACK" : "<color=#FF0000>{0} pushed back</color>",
 		"TOOLTIP_VIGILANCE" : "<color=#00FF00>{0} vigilance</color>",
 		"TOOLTIP_RANDOM" : "\nRANDOM => <color=#FF0000>{0} to {1}</color> <i>(reduced by piloting)</i>",
 		"TOOLTIP_EXPECTED" : "EXPECTED PHASE: <b>{0} to {1}</b>",

@@ -25,11 +25,20 @@ namespace SBITests
             TestGlobalInit.HarmonyInst.Unpatch(TestGlobalInit.MI_IsShutdown, HarmonyPatchType.Prefix);
         }
 
+        // IsShutDown is a one-line getter the JIT may inline into ShutdownInitMod before the Harmony prefix
+        //   is applied (test order dependent), so set the backing field as well.
+        private static Mech BuildShutdownMech()
+        {
+            Mech mech = TestHelper.BuildTestMech(tonnage: 50);
+            Traverse.Create(mech).Field("_isShutDown").SetValue(true);
+            return mech;
+        }
+
         [TestMethod]
         public void TestShutdownSkill()
         {
 
-            Mech attacker = TestHelper.BuildTestMech(tonnage: 50);
+            Mech attacker = BuildShutdownMech();
             attacker.GetPilot().StatCollection.Set<int>(ModStats.MOD_SKILL_PILOT, 0);
 
             attacker.GetPilot().StatCollection.Set<int>("Piloting", 1);
@@ -92,7 +101,7 @@ namespace SBITests
         public void TestShutdownMods()
         {
 
-            Mech attacker = TestHelper.BuildTestMech(tonnage: 50);
+            Mech attacker = BuildShutdownMech();
             attacker.GetPilot().StatCollection.Set<int>(ModStats.MOD_SKILL_PILOT, 0);
 
             attacker.GetPilot().StatCollection.Set<int>("Piloting", 1);

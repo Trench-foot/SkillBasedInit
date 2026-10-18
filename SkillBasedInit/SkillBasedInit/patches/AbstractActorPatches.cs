@@ -19,9 +19,12 @@ namespace SkillBasedInit
     [HarmonyPatch(typeof(AbstractActor), "DeferUnit")]
     public static class AbstractActor_DeferUnit
     {
-        public static void Postfix(AbstractActor __instance)
+        public static void Postfix(AbstractActor __instance, bool __result)
         {
             Mod.Log.Trace?.Write($"AA:DU - entered.");
+
+            // Vanilla refuses to reserve in the last phase or after activation begins; upstream applied hesitation anyway
+            if (!__result) return;
 
             int penalty = __instance.GetHesitationPenalty();
             int newInit = __instance.Initiative + penalty;
@@ -33,7 +36,7 @@ namespace SkillBasedInit
             // Save the penalty to the actor for next round
             try
             {
-                __instance.StatCollection.ModifyStat<int>(__instance.GUID, -1, ModStats.STATE_HESITATION, StatCollection.StatOperation.Int_Add, penalty);
+                InitiativeHelper.AddHesitation(__instance, penalty, __instance.Combat.TurnDirector.CurrentRound);
                 Mod.Log.Info?.Write($"Hesitation increased to {__instance.StatCollection.GetValue<int>(ModStats.STATE_HESITATION)} for actor: {__instance.DistinctId()}");
             }
             catch (Exception e)
@@ -161,6 +164,8 @@ namespace SkillBasedInit
 
             // Stats that track future state
             __instance.StatCollection.AddStatistic<int>(ModStats.STATE_CALLED_SHOT, 0);
+            __instance.StatCollection.AddStatistic<int>(ModStats.STATE_MELEE_PUSHBACK, 0);
+            __instance.StatCollection.AddStatistic<int>(ModStats.STATE_LAST_RESERVE_ROUND, 0);
             __instance.StatCollection.AddStatistic<int>(ModStats.STATE_VIGILIANCE, 0);
             __instance.StatCollection.AddStatistic<int>(ModStats.STATE_HESITATION, 0);
 

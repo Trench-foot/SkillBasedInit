@@ -89,6 +89,8 @@ namespace SBITests
             actor.StatCollection.AddStatistic<int>(SkillBasedInit.ModStats.MOD_VIGILANCE, 0);
             actor.StatCollection.AddStatistic<int>(SkillBasedInit.ModStats.MOD_HESITATION, 0);
             actor.StatCollection.AddStatistic<int>(SkillBasedInit.ModStats.STATE_CALLED_SHOT, 0);
+            actor.StatCollection.AddStatistic<int>(SkillBasedInit.ModStats.STATE_MELEE_PUSHBACK, 0);
+            actor.StatCollection.AddStatistic<int>(SkillBasedInit.ModStats.STATE_LAST_RESERVE_ROUND, 0);
             actor.StatCollection.AddStatistic<int>(SkillBasedInit.ModStats.STATE_VIGILIANCE, 0);
             actor.StatCollection.AddStatistic<int>(SkillBasedInit.ModStats.STATE_HESITATION, 0);
         }

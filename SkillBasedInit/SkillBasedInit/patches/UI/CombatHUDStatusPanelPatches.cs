@@ -159,12 +159,22 @@ namespace SkillBasedInit.patches
                 pilotDetails.Add(new Text(Mod.LocalizedText.Tooltip[ModText.LT_TT_CALLED_SHOT], new object[] { calledShotMod }).ToString());
             }
 
+            int pushBackMod = actor.StatCollection.ContainsStatistic(ModStats.STATE_MELEE_PUSHBACK) ?
+                actor.StatCollection.GetValue<int>(ModStats.STATE_MELEE_PUSHBACK) : 0;
+            if (pushBackMod != 0)
+            {
+                Mod.Log.Debug?.Write($"  pushBackMod: {pushBackMod}");
+                initiativeBase += pushBackMod;
+                pilotDetails.Add(new Text(Mod.LocalizedText.Tooltip[ModText.LT_TT_PUSHBACK], new object[] { pushBackMod }).ToString());
+            }
+
             if (actor.StatCollection.GetValue<int>(ModStats.STATE_VIGILIANCE) != 0)
             {
                 int vigilanceMod = actor.StatCollection.GetValue<int>(ModStats.STATE_VIGILIANCE);
                 Mod.Log.Debug?.Write($"  vigilanceMod: {vigilanceMod}");
                 initiativeBase += vigilanceMod;
-                pilotDetails.Add(new Text(Mod.LocalizedText.Tooltip[ModText.LT_TT_VIGILANCE], new object[] { vigilanceMod }).ToString());
+                // Stored as a negative (earlier); show the size of the bonus
+                pilotDetails.Add(new Text(Mod.LocalizedText.Tooltip[ModText.LT_TT_VIGILANCE], new object[] { vigilanceMod * -1 }).ToString());
             }
 
             int[] randomnessBounds = selectedPilot.RandomnessBounds(unitCfg.RandomnessMin, unitCfg.RandomnessMax);

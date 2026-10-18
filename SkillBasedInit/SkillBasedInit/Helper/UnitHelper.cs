@@ -518,12 +518,6 @@ namespace SkillBasedInit.Helper
             // Get attacker bonus, get target bonus, combine
             if (target == null || attacker == null) return 0;
 
-            // Config is phase modifiers, so invert
-            UnitCfg unitCfg = target.GetUnitConfig();
-            int invertedMin = unitCfg.CalledShotRandMin * -1;
-            int invertedMax = unitCfg.CalledShotRandMax * -1;
-            Mod.Log.Debug?.Write($"Unit: {target.DistinctId()} raw called shot raw bounds => min: {invertedMin} to max: {invertedMax}");
-
             // Assume the stat is a phase modifier, so invert
             int targetCSMod = target.StatCollection.GetValue<int>(ModStats.MOD_CALLED_SHOT_TARGET) * -1;
             int targetSkillMod = target.GetPilot().AverageGutsAndTacticsMod();
@@ -541,14 +535,9 @@ namespace SkillBasedInit.Helper
                 actorDelta = 0;
             Mod.Log.Debug?.Write($"actor delta: {actorDelta} = attackerMod: {attackerMod} - targetMod: {targetMod}");
 
-            int adjustedMin = invertedMin + actorDelta;
-            int adjustedMax = invertedMax + actorDelta;
-            if (adjustedMax <= adjustedMin)
-                adjustedMax = adjustedMin + 1;
-
-            // Add +1 to max BECUASE MICROSOFT SUCKS (see https://docs.microsoft.com/en-us/dotnet/api/system.random.next?view=net-6.0#system-random-next(system-int32-system-int32)
-            int finalMod = Mod.Random.Next(adjustedMin, adjustedMax + 1);
-            Mod.Log.Debug?.Write($"Called shot penalty: {finalMod} from Rand({adjustedMin}, {adjustedMax}) ");
+            // Hybrid: a flat base plus the skill difference, no randomness
+            int finalMod = Mod.Config.CalledShot.BasePhases + actorDelta;
+            Mod.Log.Debug?.Write($"Called shot penalty: {finalMod} = base: {Mod.Config.CalledShot.BasePhases} + actorDelta: {actorDelta}");
 
             if (finalMod < 0)
             {
@@ -564,10 +553,8 @@ namespace SkillBasedInit.Helper
         {
             if (actor == null || actor.GetPilot() == null) return 0;
 
-            // Config is a phase modifier, so invert. These will be negatives presumably
-            UnitCfg unitCfg = actor.GetUnitConfig();
-            int invertedMin = unitCfg.VigilanceRandMin * -1;
-            int invertedMax = unitCfg.VigilanceRandMax * -1;
+            // Base is a bonus, so it reduces init
+            int baseMod = Mod.Config.Vigilance.BasePhases * -1;
 
             //  Assume this is a phase modifier, and invert
             int actorMod = actor.StatCollection.GetValue<int>(ModStats.MOD_VIGILANCE) * -1;
@@ -575,14 +562,9 @@ namespace SkillBasedInit.Helper
             // Invert the value so it reduces the outcome
             int skillMod = actor.GetPilot().AverageGutsAndTacticsMod() * -1;
 
-            int adjustedMin = invertedMin + actorMod + skillMod;
-            Mod.Log.Debug?.Write($"  adjustedMin: {adjustedMin} = invertedMin: {invertedMin} + actorMod: {actorMod} + skillMod: {skillMod})");
-            int adjustedMax = invertedMax + actorMod + skillMod;
-            Mod.Log.Debug?.Write($"  adjustedMax: {adjustedMax} = invertedMin: {invertedMax} + actorMod: {actorMod} + skillMod: {skillMod})");
-
-            // Add +1 to max BECUASE MICROSOFT SUCKS (see https://docs.microsoft.com/en-us/dotnet/api/system.random.next?view=net-6.0#system-random-next(system-int32-system-int32)
-            int finalMod = Mod.Random.Next(adjustedMax, adjustedMin + 1);
-            Mod.Log.Debug?.Write($"Vigilance bonus: {finalMod} = min:{adjustedMin} to max: {adjustedMax}");
+            // Hybrid: a flat base plus skill, no randomness
+            int finalMod = baseMod + actorMod + skillMod;
+            Mod.Log.Debug?.Write($"Vigilance bonus: {finalMod} = base: {baseMod} + actorMod: {actorMod} + skillMod: {skillMod}");
             if (finalMod > 0)
             {
                 Mod.Log.Debug?.Write("Normalizing bonus > 0 to 0");

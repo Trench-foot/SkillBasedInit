@@ -11,6 +11,9 @@ namespace SkillBasedInit
         public const string LT_FT_CALLED_SHOT_NOW = "FLOATIE_CALLED_SHOT_NOW";
         public const string LT_FT_CALLED_SHOT_LATER = "FLOATIE_CALLED_SHOT_LATER";
         public const string LT_FT_VIGILANCE = "FLOATIE_VIGILANCE";
+        public const string LT_FT_PUSHBACK_NOW = "FLOATIE_PUSHBACK_NOW";
+        public const string LT_FT_PUSHBACK_LATER = "FLOATIE_PUSHBACK_LATER";
+        public const string LT_FT_ARRIVAL = "FLOATIE_ARRIVAL";
 
         // Mech Bay
         public const string LT_MB_TONNAGE = "MECHBAY_TONNAGE";
@@ -39,6 +42,7 @@ namespace SkillBasedInit
         public const string LT_TT_INSPIRED = "TOOLTIP_INSPIRED";
         public const string LT_TT_HESITATION = "TOOLTIP_HESITATION";
         public const string LT_TT_CALLED_SHOT = "TOOLTIP_CALLED_SHOT";
+        public const string LT_TT_PUSHBACK = "TOOLTIP_PUSHBACK";
         public const string LT_TT_VIGILANCE = "TOOLTIP_VIGILANCE";
         public const string LT_TT_RANDOM = "TOOLTIP_RANDOM";
         public const string LT_TT_EXPECTED = "TOOLTIP_EXPECTED";
@@ -51,6 +55,9 @@ namespace SkillBasedInit
             { LT_FT_CALLED_SHOT_NOW, "CALLED SHOT! -{0} INIT" },
             { LT_FT_CALLED_SHOT_LATER, "CALLED SHOT! -{0} INIT NEXT ROUND" },
             { LT_FT_VIGILANCE, "VIGILANCE! +{0} INIT NEXT ROUND!" },
+            { LT_FT_PUSHBACK_NOW, "PUSHED BACK! -{0} INIT" },
+            { LT_FT_PUSHBACK_LATER, "PUSHED BACK! -{0} INIT NEXT ROUND" },
+            { LT_FT_ARRIVAL, "ARRIVING! -{0} INIT" },
         };
 
         public Dictionary<string, string> MechBay = new Dictionary<string, string>()
@@ -87,6 +94,7 @@ namespace SkillBasedInit
 
             { LT_TT_HESITATION, "<color=#FF0000>{0} hesitation</color>" },
             { LT_TT_CALLED_SHOT, "<color=#FF0000>{0} called shot</color>" },
+            { LT_TT_PUSHBACK, "<color=#FF0000>{0} pushed back</color>" },
             { LT_TT_VIGILANCE, "<color=#00FF00>{0} vigilance</color>" },
 
             { LT_TT_RANDOM, "\nRANDOM => <color=#FF0000>-{0} to -{1}</color> <i>(reduced by piloting)</i>" },

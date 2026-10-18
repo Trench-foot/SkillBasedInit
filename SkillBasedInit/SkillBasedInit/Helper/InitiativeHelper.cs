@@ -179,6 +179,16 @@ namespace SkillBasedInit.Helper
                 actor.StatCollection.Set<int>(ModStats.STATE_CALLED_SHOT, 0);
             }
 
+            // Actor was pushed back by melee sometime after its turn. Saves from before this stat existed won't have it.
+            int pushBackMod = actor.StatCollection.ContainsStatistic(ModStats.STATE_MELEE_PUSHBACK) ?
+                actor.StatCollection.GetValue<int>(ModStats.STATE_MELEE_PUSHBACK) : 0;
+            if (pushBackMod != 0)
+            {
+                roundInitiative += pushBackMod;
+                Mod.Log.Info?.Write($"roundInit: {roundInitiative} <=  meleePushBackState: {pushBackMod}");
+                actor.StatCollection.Set<int>(ModStats.STATE_MELEE_PUSHBACK, 0);
+            }
+
             int vigilanceMod = actor.StatCollection.GetValue<int>(ModStats.STATE_VIGILIANCE);
             if (vigilanceMod != 0)
             {
@@ -215,13 +225,22 @@ namespace SkillBasedInit.Helper
 
             if (actor.StatCollection.GetValue<int>(ModStats.STATE_HESITATION) != 0)
             {
-                // Tactics mod is raw, so reduce hestitation init by raw statics modifier
-                int hestiationReduction = pilot.SBITacticsMod() + 1;
-                int reducedHesitation = actor.StatCollection.GetValue<int>(ModStats.STATE_HESITATION) - hestiationReduction;
-                Mod.Log.Info?.Write($"  hesitationMod: {actor.StatCollection.GetValue<int>(ModStats.STATE_HESITATION)} - tacticsMod: {hestiationReduction} => {reducedHesitation}");
-                if (reducedHesitation < 0) reducedHesitation = 0;
-                roundInitiative += reducedHesitation;
-                actor.StatCollection.Set<int>(ModStats.STATE_HESITATION, reducedHesitation);
+                int carriedHesitation = actor.StatCollection.GetValue<int>(ModStats.STATE_HESITATION);
+                if (ReservedLastRound(actor))
+                {
+                    // Consecutive reserves stack: no decay while the unit keeps reserving
+                    Mod.Log.Info?.Write($"  hesitationMod: {carriedHesitation} carried without decay, unit reserved last round");
+                }
+                else
+                {
+                    // Tactics mod is raw, so reduce hestitation init by raw statics modifier
+                    int hestiationReduction = pilot.SBITacticsMod() + 1;
+                    int reducedHesitation = carriedHesitation - hestiationReduction;
+                    Mod.Log.Info?.Write($"  hesitationMod: {carriedHesitation} - tacticsMod: {hestiationReduction} => {reducedHesitation}");
+                    carriedHesitation = reducedHesitation < 0 ? 0 : reducedHesitation;
+                }
+                roundInitiative += carriedHesitation;
+                actor.StatCollection.Set<int>(ModStats.STATE_HESITATION, carriedHesitation);
             }
 
             // Normalize values
@@ -241,7 +260,52 @@ namespace SkillBasedInit.Helper
             Mod.Log.Info?.Write($"  actor.Initiative: {actor.Initiative} => phase: {newPhase}");
         }
 
-        // Calculate the left and right phase boundaries *as initiative* 
+        // Carried hesitation is capped so it's bounded by the phase range; the final phase is clamped separately
+        public const int MaxHesitation = Mod.MaxPhase - Mod.MinPhase;
+
+        // Adds a reserve's hesitation to the carried total and records the round, so the next round knows not to decay it
+        public static void AddHesitation(AbstractActor actor, int penalty, int currentRound)
+        {
+            StatCollection stats = actor.StatCollection;
+            // Actors loaded from saves made before these stats existed won't have them
+            if (!stats.ContainsStatistic(ModStats.STATE_LAST_RESERVE_ROUND)) stats.AddStatistic<int>(ModStats.STATE_LAST_RESERVE_ROUND, 0);
+
+            int carried = stats.GetValue<int>(ModStats.STATE_HESITATION) + penalty;
+            if (carried > MaxHesitation) carried = MaxHesitation;
+
+            stats.Set<int>(ModStats.STATE_HESITATION, carried);
+            stats.Set<int>(ModStats.STATE_LAST_RESERVE_ROUND, currentRound);
+        }
+
+        // OnNewRound runs after TurnDirector.CurrentRound is advanced, so 'last round' is CurrentRound - 1
+        public static bool ReservedLastRound(AbstractActor actor)
+        {
+            if (!actor.StatCollection.ContainsStatistic(ModStats.STATE_LAST_RESERVE_ROUND)) return false;
+
+            int lastReserveRound = actor.StatCollection.GetValue<int>(ModStats.STATE_LAST_RESERVE_ROUND);
+            int currentRound = actor.Combat.TurnDirector.CurrentRound;
+            return lastReserveRound > 0 && lastReserveRound == currentRound - 1;
+        }
+
+        // Initiative for a unit that joins combat mid-mission: a full roll, plus the arrival delay when requested.
+        //   Never earlier than the phase in progress, so the unit still acts in the round it arrives.
+        public static int ArrivalInitiative(AbstractActor actor, bool applyDelay)
+        {
+            UpdateInitiative(actor);
+
+            int delay = applyDelay ? Mod.Config.Arrival.DelayPhases : 0;
+            int arrivalInit = actor.Initiative + delay;
+
+            int currentPhase = actor.Combat.TurnDirector.CurrentPhase;
+            if (arrivalInit < currentPhase) arrivalInit = currentPhase;
+            if (arrivalInit > Mod.MaxPhase) arrivalInit = Mod.MaxPhase;
+
+            Mod.Log.Info?.Write($"Arrival for actor: {actor.DistinctId()} => rolled: {actor.Initiative} + delay: {delay}, currentPhase: {currentPhase} => {arrivalInit}");
+            actor.Initiative = arrivalInit;
+            return delay;
+        }
+
+        // Calculate the left and right phase boundaries *as initiative*
         //   Will calculate 
         // 30, 29, 28, 27, 26 (red 30) -> phase 1
         // 30, 29, 28, 27, 26 (red 29) -> phase 2

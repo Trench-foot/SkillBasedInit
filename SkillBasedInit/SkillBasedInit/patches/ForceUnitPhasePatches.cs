@@ -7,20 +7,42 @@ namespace SkillBasedInit.Patches
 {
 
     // --- FORCE UNIT PHASE DOWN EFECTS ---
-    // Handle knockdowns
+    // Handle knockdowns. Vanilla calls ForceUnitOnePhaseDown from inside CompleteKnockdown; that call is suppressed
+    //   (see AbstractActor_ForceUnitOnePhaseDown) so the SBI prone penalty is the only one applied.
     [HarmonyPatch(typeof(Mech), "CompleteKnockdown")]
     [HarmonyPatch(new Type[] { typeof(string), typeof(int) })]
     public static class Mech_CompleteKnockdown
     {
+        public static bool InKnockdown = false;
 
-        public static void Postfix(Mech __instance, string sourceID, int stackItemUID)
+        public static void Prefix(ref bool __runOriginal, Mech __instance, ref bool __state)
+        {
+            if (!__runOriginal) return;
+
+            Mod.Log.Trace?.Write("M:CK:pre - entered.");
+            InKnockdown = true;
+
+            // Vanilla does nothing if the mech is already prone or dead; remember that so we don't add a second penalty
+            __state = !__instance.IsDead && !__instance.IsProne;
+        }
+
+        public static void Postfix(Mech __instance, string sourceID, int stackItemUID, bool __state)
         {
             Mod.Log.Trace?.Write("M:CK:post - entered.");
+            InKnockdown = false;
+
+            if (!__state)
+            {
+                Mod.Log.Debug?.Write($"Actor: {__instance.DistinctId()} was already prone or dead, no knockdown penalty.");
+                return;
+            }
+
             Mod.Log.Debug?.Write($"Completing knockdown for actor: {__instance.DistinctId()} from sourceID:{sourceID} stackItemUID:{stackItemUID}.");
 
             bool applyNextTurn = __instance.HasActivatedThisRound || __instance.Initiative >= Mod.MaxPhase;
             if (applyNextTurn)
             {
+                // ProneInitMod is applied every round while prone, so there's nothing to store
                 Mod.Log.Debug?.Write("Actor has already acted, applying prone modifier next turn.");
                 return;
             }
@@ -70,76 +92,73 @@ namespace SkillBasedInit.Patches
         }
     }
 
-    // Required to apply the negative as soon as it happens in the knockdown case
+    // Vanilla ForceUnitOnePhaseDown moves the unit one phase and creates InitiativeDelayEffect (BaseInitiative +1),
+    //   which the vanilla delta would also count. Replace it entirely while interleaved. Callers are:
+    //   - morale attacks (called shot): hybrid called shot penalty
+    //   - Mech.CompleteKnockdown: nothing, Mech_CompleteKnockdown applies the SBI prone penalty
+    //   - melee push-back (MeleeHitPushBackPhases, vanilla or CBTBE): MeleePushBack.PhasesPerPoint per call
     [HarmonyPatch(typeof(AbstractActor), "ForceUnitOnePhaseDown")]
     [HarmonyPatch(new Type[] { typeof(string), typeof(int), typeof(bool) })]
     public static class AbstractActor_ForceUnitOnePhaseDown
     {
-
-        static bool InvokeIsCalledShot = false;
-
-        // We temporarily set the actorInit to PhaseAssault to trick the original method into not firing, then do our work in a postfix.
-        //   We have to persist the actorInit during this time.
-        public static int PreInvokeInitiative;
-
         public static void Prefix(ref bool __runOriginal, AbstractActor __instance, string sourceID, int stackItemUID, bool addedBySelf)
         {
             if (!__runOriginal) return;
 
             Mod.Log.Trace?.Write("AA:FUOPD:pre - entered.");
 
-            InvokeIsCalledShot = AttackStackSequence_OnAdded.IsMoraleAttack ? true : false;
+            // Vanilla does nothing outside of interleaved mode either
+            if (!__instance.Combat.TurnDirector.IsInterleaved) return;
+            __runOriginal = false;
 
-            // In either of these cases, we want our logic to apply, not default. Fake out the call temporarily, then restore init at the end.
-            if (InvokeIsCalledShot)
+            if (Mech_CompleteKnockdown.InKnockdown)
             {
-                PreInvokeInitiative = __instance.Initiative;
-                __instance.Initiative = __instance.Combat.Constants.Phase.PhaseAssault;
+                Mod.Log.Debug?.Write($"Suppressing vanilla knockdown delay for actor: {__instance.DistinctId()}");
+                return;
             }
-        }
 
-        public static void Postfix(AbstractActor __instance, string sourceID, int stackItemUID, bool addedBySelf)
-        {
-            Mod.Log.Trace?.Write("AA:FUOPD:post - entered.");
-            if (!InvokeIsCalledShot) return;
-
-            bool applyNextTurn = __instance.HasActivatedThisRound || __instance.Initiative >= Mod.MaxPhase;
-            int penalty = __instance.CalledShotInitMod(AttackStackSequence_OnAdded.Attacker);
-            if (penalty == 0) return; // nothing to do
-
-            if (applyNextTurn)
+            if (AttackStackSequence_OnAdded.IsMoraleAttack)
             {
-                Mod.Log.Info?.Write($"Applying penalty: {penalty} to {__instance.DistinctId()} with init: {PreInvokeInitiative} next turn.");
-                __instance.StatCollection.ModifyStat<int>("self", -1, ModStats.STATE_CALLED_SHOT, StatCollection.StatOperation.Int_Add, penalty);
-
-                // Leave their init untouched on this round
-                __instance.Initiative = PreInvokeInitiative;
+                int penalty = __instance.CalledShotInitMod(AttackStackSequence_OnAdded.Attacker);
+                ApplyDelay(__instance, penalty, ModStats.STATE_CALLED_SHOT, ModText.LT_FT_CALLED_SHOT_NOW, ModText.LT_FT_CALLED_SHOT_LATER);
             }
             else
             {
-                Mod.Log.Info?.Write($"Applying penalty: {penalty} to {__instance.DistinctId()} with init: {PreInvokeInitiative} immediately.");
-
-                // The prefix call from CompleteKnockdown will have the actual initiative value, do not use the actor initiative
-                __instance.Initiative = PreInvokeInitiative + penalty;
-                if (__instance.Initiative > Mod.MaxPhase)
-                {
-                    __instance.Initiative = Mod.MaxPhase;
-                }
-                __instance.Combat.MessageCenter.PublishMessage(new ActorPhaseInfoChanged(__instance.GUID));
+                int penalty = Mod.Config.MeleePushBack.PhasesPerPoint;
+                ApplyDelay(__instance, penalty, ModStats.STATE_MELEE_PUSHBACK, ModText.LT_FT_PUSHBACK_NOW, ModText.LT_FT_PUSHBACK_LATER);
             }
-
-            string floatieMsg = applyNextTurn ?
-                new Text(Mod.LocalizedText.Floaties[ModText.LT_FT_CALLED_SHOT_LATER], new object[] { penalty }).ToString() :
-                new Text(Mod.LocalizedText.Floaties[ModText.LT_FT_CALLED_SHOT_NOW], new object[] { penalty }).ToString();
-            __instance.Combat.MessageCenter.PublishMessage(
-                new FloatieMessage(__instance.GUID, __instance.GUID, floatieMsg, FloatieMessage.MessageNature.Debuff)
-                );
         }
 
+        // Delays the unit now if it hasn't acted yet, otherwise stores the penalty for next round's UpdateInitiative
+        public static void ApplyDelay(AbstractActor actor, int penalty, string stateStat, string floatieNowKey, string floatieLaterKey)
+        {
+            if (penalty <= 0) return; // nothing to do
+
+            bool applyNextTurn = actor.HasActivatedThisRound || actor.Initiative >= Mod.MaxPhase;
+            if (applyNextTurn)
+            {
+                Mod.Log.Info?.Write($"Applying penalty: {penalty} to {actor.DistinctId()} with init: {actor.Initiative} next turn via {stateStat}.");
+                // Actors loaded from saves made before a stat existed won't have it
+                if (!actor.StatCollection.ContainsStatistic(stateStat)) actor.StatCollection.AddStatistic<int>(stateStat, 0);
+                actor.StatCollection.ModifyStat<int>("self", -1, stateStat, StatCollection.StatOperation.Int_Add, penalty);
+            }
+            else
+            {
+                Mod.Log.Info?.Write($"Applying penalty: {penalty} to {actor.DistinctId()} with init: {actor.Initiative} immediately.");
+                actor.Initiative = Math.Min(actor.Initiative + penalty, Mod.MaxPhase);
+                actor.Combat.MessageCenter.PublishMessage(new ActorPhaseInfoChanged(actor.GUID));
+            }
+
+            string floatieKey = applyNextTurn ? floatieLaterKey : floatieNowKey;
+            string floatieMsg = new Text(Mod.LocalizedText.Floaties[floatieKey], new object[] { penalty }).ToString();
+            actor.Combat.MessageCenter.PublishMessage(
+                new FloatieMessage(actor.GUID, actor.GUID, floatieMsg, FloatieMessage.MessageNature.Debuff)
+                );
+        }
     }
 
     // --- FORCE UNIT PHASE UP EFFECTS ---
-    // Handle knockdowns
+    // Record the morale defend (Vigilance) source so ForceUnitOnePhaseUp can tell it apart from other callers
     [HarmonyPatch(typeof(Mech), "ApplyMoraleDefendEffects")]
     [HarmonyPatch(new Type[] { typeof(string), typeof(int) })]
     public static class Mech_ApplyMoraleDefendEffects
@@ -168,54 +187,34 @@ namespace SkillBasedInit.Patches
         }
     }
 
-    // Required to apply the negative as soon as it happens in the knockdown case
+    // Replace vanilla's Vigilance phase change (-1 now, PhaseModifierSelf -1 next round) with the hybrid bonus,
+    //   stored for next round. Braced and stability effects in ApplyMoraleDefendEffects are untouched.
+    //   Other callers fall through to vanilla.
     [HarmonyPatch(typeof(AbstractActor), "ForceUnitOnePhaseUp")]
     [HarmonyPatch(new Type[] { typeof(string), typeof(int), typeof(bool) })]
     public static class AbstractActor_ForceUnitOnePhaseUp
     {
-
-        static bool InvokeIsVigilance = false;
-        static int PreInvokeInitiative = 0;
-
         static void Prefix(ref bool __runOriginal, AbstractActor __instance, string sourceID, int stackItemUID)
         {
             if (!__runOriginal) return;
 
             Mod.Log.Trace?.Write("AA:FUOPU:pre - entered.");
             Mod.Log.Info?.Write($"AbstractActor:ForceUnitOnePhaseUp:prefix - sourceID:{sourceID} vs actor: {__instance.GUID}");
-            if (sourceID == Mech_ApplyMoraleDefendEffects.MoraleDefendSourceId && stackItemUID == Mech_ApplyMoraleDefendEffects.MoraleDefendStackItemId)
-            {
-                InvokeIsVigilance = true;
-                PreInvokeInitiative = __instance.Initiative;
-                __instance.Initiative = __instance.Combat.Constants.Phase.PhaseSpecial;
-            }
-            else
-            {
-                InvokeIsVigilance = false;
-            }
+
+            bool isVigilance = sourceID == Mech_ApplyMoraleDefendEffects.MoraleDefendSourceId && stackItemUID == Mech_ApplyMoraleDefendEffects.MoraleDefendStackItemId;
+            if (!isVigilance) return;
+
+            __runOriginal = false;
+
+            int bonus = __instance.VigilanceInitMod();
+            if (bonus == 0) return;
+
+            __instance.StatCollection.ModifyStat<int>("self", -1, ModStats.STATE_VIGILIANCE, StatCollection.StatOperation.Int_Add, bonus);
+
+            // Bonus is negative (earlier); the floatie reads '+{0} INIT'
+            string floatieMsg = new Text(Mod.LocalizedText.Floaties[ModText.LT_FT_VIGILANCE], new object[] { bonus * -1 }).ToString();
+            __instance.Combat.MessageCenter.PublishMessage(new FloatieMessage(__instance.GUID, __instance.GUID, floatieMsg, FloatieMessage.MessageNature.Buff));
         }
-
-        public static void Postfix(AbstractActor __instance)
-        {
-            Mod.Log.Trace?.Write("AA:FUOPU:post - entered.");
-            if (InvokeIsVigilance)
-            {
-
-                int bonus = __instance.VigilanceInitMod();
-                if (bonus != 0)
-                {
-                    __instance.StatCollection.ModifyStat<int>("self", -1, ModStats.STATE_VIGILIANCE, StatCollection.StatOperation.Int_Add, bonus);
-
-                    string floatieMsg = new Text(Mod.LocalizedText.Floaties[ModText.LT_FT_VIGILANCE], new object[] { bonus }).ToString();
-                    __instance.Combat.MessageCenter.PublishMessage(new FloatieMessage(__instance.GUID, __instance.GUID, floatieMsg, FloatieMessage.MessageNature.Buff));
-
-                }
-
-                // Restore actor's initiative
-                __instance.Initiative = PreInvokeInitiative;
-            }
-        }
-
     }
 
 }
